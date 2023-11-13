@@ -25,104 +25,111 @@ func (p *parser) parse(tokens []string) map[string]interface{} {
 
     tree := p._tree()
 
+    if _, ok := tree["conds"];!ok {
+    	panic("syntax error")
+    }
+
     return tree
 }
 
 func (p *parser) _tree() map[string]interface{} {
-	state := 0
+	state   := 0
 	logical := "$and"
-	key := ""
-	oprts := ""
-	var value interface{} = ""
-	conds := []map[string]interface{}{}
+	key     := ""
+	opr   := ""
+	conds   := []map[string]interface{}{}
+	var value interface{}
+
 	for ; p.index < p.length; p.index++ {
 		token := p.tokens[p.index]
 		switch state {
-		case 0:
-			switch token {
-			case "(":
-				p.index++
-				child := p._tree()
-				conds = append(conds, map[string]interface{}{child["logical"].(string): child["conds"].([]map[string]interface{})})
-				state = 2
-			default:
-				key = token
-			}
-		case 1:
-			switch strings.ToLower(token) {
-			case "=" :
-					oprts = "$eq"
-			case "!=" :
-					oprts = "$ne"
-			case ">" :
-					oprts = "$gt"
-			case ">=" :
-					oprts = "$gte"
-			case "<" :
-					oprts = "$lt"
-			case "<=" :
-					oprts = "$lte"
-			case "like" :
-					oprts = "$like"
-			case "regexp" :
-					oprts = "$regex"
-			case "near" :
-					oprts = "$near"
-			case "in":
-				if oprts != "" && oprts == "not" {
-					oprts = "$nin"
-				} else {
-					oprts = "$in"
-				}
-			case "is":
-				oprts = "is"
-				state--
-			case "not":
-				if oprts != "" && oprts == "is" {
-					oprts = "is not"
-				} else {
-					oprts = "not"
-				}
-				state--
-			case "null":
-				p.index--
-				if oprts != "" && oprts == "is not" {
-					value = 1
-				} else {
-					value = 0
-				}
-				oprts = "$exists"
-			default:
-				panic("syntax error")
-			}
-		case 2:
-			switch token {
-			case "null":
-			case "?":
-				value = token
-			default:
-				panic("syntax error")
-			}
+			case 0:
+				switch token {
+					case "(":
+							p.index++
+							child := p._tree()
+							conds = append(conds, map[string]interface{}{child["logical"].(string): child["conds"].([]map[string]interface{})})
+							state = 2
+					default:
+							key = token
+					}
+			case 1:
+					switch strings.ToLower(token) {
+						case "="  :
+									opr = "$eq"
+						case "!=" :
+									opr = "$ne"
+						case ">"  :
+									opr = "$gt"
+						case ">=" :
+									opr = "$gte"
+						case "<"  :
+									opr = "$lt"
+						case "<=" :
+									opr = "$lte"
+						case "like" :
+									opr = "$like"
+						case "regexp" :
+									opr = "$regex"
+						case "near" :
+									opr = "$near"
+						case "in":
+									if opr != "" && opr == "not" {
+										opr = "$nin"
+									} else {
+										opr = "$in"
+									}
+						case "is":
+									opr = "is"
+									state--
+						case "not":
+									if opr != "" && opr == "is" {
+										opr = "is not"
+									} else {
+										opr = "not"
+									}
+									state--
+						case "null":
+									p.index--
+									if opr != "" && opr == "is not" {
+										value = true
+									} else {
+										value = false
+									}
+									opr = "$exists"
+						default:
+								panic("syntax error")
+					}
+			case 2:
+					switch token {
+						case "null":
+						case "?":
+								value = token
+						default:
+								panic("syntax error")
+					}
 
-			conds = append(conds, map[string]interface{}{key: map[string]interface{}{oprts: value}})
-		case 3:
-			switch token {
-			case ")":
-				return map[string]interface{}{"logical": logical, "conds": conds}
-			case "and":
-				logical = "$and"
-				state = -1
-			case "or":
-				logical = "$or"
-				state = -1
+					conds = append(conds, map[string]interface{}{key: map[string]interface{}{opr: value}})
+			case 3:
+					switch token {
+						case ")":
+								return map[string]interface{}{"logical": logical, "conds": conds}
+						case "and":
+								logical = "$and"
+								state = -1
+						case "or":
+								logical = "$or"
+								state = -1
+						default:
+								panic("syntax error")
+					}
 			default:
-				panic("syntax error")
-			}
-		default:
-			panic("syntax error")
+					panic("syntax error")
 		}
+
 		state++
 	}
+
 	return map[string]interface{}{"logical": logical, "conds": conds}
 }
 
