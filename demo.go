@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	//"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func main() {
@@ -49,6 +50,7 @@ func main() {
 	}
 */
 
+/*
 	//多条查询，分页、排序
 	pageSize := 2
 	pageNum := 2
@@ -72,6 +74,30 @@ func main() {
 		cursor.Decode(&v)
 		fmt.Println(v)
 	}
+*/
+
+/*
+	//修改单条
+	id, _ := primitive.ObjectIDFromHex("6582b1952290aece3b63803b")
+	filter := bson.D{{"_id", id}}
+	update := bson.D{{"$set", bson.M{"addr":"shanghai"}}}
+	result, err := coll.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(result.ModifiedCount)
+*/
+
+	//修改多条
+	update := bson.D{{"$set", bson.M{"email":"a@b.c"}}}
+	filter := bson.M{"age":bson.M{"$gte":1}}
+	result, err := coll.UpdateMany(context.TODO(), filter, update)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(result.ModifiedCount)
 }
 
 func Open() *mongo.Client {
