@@ -89,6 +89,7 @@ func main() {
 	fmt.Println(result.ModifiedCount)
 */
 
+/*
 	//修改多条
 	update := bson.D{{"$set", bson.M{"email":"a@b.c"}}}
 	filter := bson.M{"age":bson.M{"$gte":1}}
@@ -98,6 +99,40 @@ func main() {
 	}
 
 	fmt.Println(result.ModifiedCount)
+*/
+
+/*
+	//删除单条
+	id, _ := primitive.ObjectIDFromHex("6582b1952290aece3b63803b")
+	filter := bson.D{{"_id", id}}
+	result, err := coll.DeleteOne(context.TODO(), filter)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(result.DeletedCount)
+*/
+
+/*
+	//删除多条
+	filter := bson.M{"age":bson.M{"$gt":30}}
+	result, err := coll.DeleteMany(context.TODO(), filter)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(result.DeletedCount)
+*/
+
+
+	//统计条数
+	filter := bson.M{"age":bson.M{"$gt":1}}
+	count, err := coll.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(count)
 }
 
 func Open() *mongo.Client {
