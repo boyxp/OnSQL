@@ -36,7 +36,7 @@ func main() {
 */
 
 /*
-	//查询单条
+	//查询单条，如果是find就单条，select就多条
 	filter := bson.M{"age":bson.M{"$gte":33},"name":bson.M{"$eq":"zhang"}}
 
 	var result map[string]interface{}
@@ -77,7 +77,7 @@ func main() {
 */
 
 /*
-	//修改单条
+	//修改单条，如果条件是_id
 	id, _ := primitive.ObjectIDFromHex("6582b1952290aece3b63803b")
 	filter := bson.D{{"_id", id}}
 	update := bson.D{{"$set", bson.M{"addr":"shanghai"}}}
@@ -90,7 +90,7 @@ func main() {
 */
 
 /*
-	//修改多条
+	//修改多条，如果条件不含_id
 	update := bson.D{{"$set", bson.M{"email":"a@b.c"}}}
 	filter := bson.M{"age":bson.M{"$gte":1}}
 	result, err := coll.UpdateMany(context.TODO(), filter, update)
@@ -102,7 +102,7 @@ func main() {
 */
 
 /*
-	//删除单条
+	//删除单条，如果条件含_id或limit=1
 	id, _ := primitive.ObjectIDFromHex("6582b1952290aece3b63803b")
 	filter := bson.D{{"_id", id}}
 	result, err := coll.DeleteOne(context.TODO(), filter)
@@ -114,7 +114,7 @@ func main() {
 */
 
 /*
-	//删除多条
+	//删除多条，如果条件不含_id或limit大于1
 	filter := bson.M{"age":bson.M{"$gt":30}}
 	result, err := coll.DeleteMany(context.TODO(), filter)
 	if err != nil {
@@ -124,15 +124,56 @@ func main() {
 	fmt.Println(result.DeletedCount)
 */
 
-
+/*
 	//统计条数
-	filter := bson.M{"age":bson.M{"$gt":1}}
+	//filter := bson.M{"age":bson.M{"$gt":1}}
+	filter := bson.M{"name":bson.M{"$in":bson.A{"lee","jun"}}}
 	count, err := coll.CountDocuments(context.TODO(), filter)
 	if err != nil {
 		panic(err)
 	}
 
 	fmt.Println(count)
+*/
+/*
+	//sum查询
+    filter := bson.M{"age":bson.M{"$gt":100}}
+    cursor, _ := coll.Aggregate(context.Background(), []bson.M{
+        {"$match": filter},
+        {"$group": bson.M{"_id": nil, "total": bson.M{"$sum": "$age"}}},
+    })
+
+    if cursor.Next(context.TODO()) {
+    	var result bson.M
+		cursor.Decode(&result)
+		fmt.Println(result["total"])
+    } else {
+    	fmt.Println(0)
+    }
+*/
+
+    //常见聚合count\sum\max\min\avg
+    filter := bson.M{"age":bson.M{"$gt":1}}
+    cursor, _ := coll.Aggregate(context.Background(), []bson.M{
+        {"$match": filter},//where
+        {"$limit":10},
+        {"$skip":0},
+        {"$group": bson.M{"_id":"$addr",
+        	"num": bson.M{"$sum": 1},
+        	"total": bson.M{"$sum": "$age"},
+        	"avg":bson.M{"$avg": "$age"},
+        	"min":bson.M{"$min": "$age"},
+        	"max":bson.M{"$max": "$age"},
+        }},
+        {"$sort": bson.M{"total" : -1 }},//聚合结果排序
+        {"$match": bson.M{"total":bson.M{"$gt":100}}},//having
+    })
+
+    var result bson.M
+    for cursor.Next(context.TODO()) {
+		cursor.Decode(&result)
+		fmt.Println(result)
+    }
 }
 
 func Open() *mongo.Client {
