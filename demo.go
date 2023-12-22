@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"context"
 	//"encoding/json"
-	"go.mongodb.org/mongo-driver/bson"
+	//"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	//"go.mongodb.org/mongo-driver/bson/primitive"
@@ -18,16 +18,16 @@ func main() {
 	coll := client.Database("test").Collection("test")
 /*
 	//插入单条
-	res, err := coll.InsertOne(context.TODO(), bson.M{"name":"liu","age":20})
+	res, err := coll.InsertOne(context.TODO(), map[string]interface{}{"name":"tang","age":21})
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(res.InsertedID)
+	fmt.Println("id:",res.InsertedID)
 */
 /*
 	//插入多条
-	res, err := coll.InsertMany(context.TODO(), []interface{}{bson.M{"name":"liu","age":20},bson.M{"name":"ma","age":25}})
+	res, err := coll.InsertMany(context.TODO(), []interface{}{map[string]interface{}{"name":"liu111","age":20},map[string]interface{}{"name":"ma222","age":25}})
 	if err != nil {
 		panic(err)
 	}
@@ -37,12 +37,18 @@ func main() {
 
 /*
 	//查询单条，如果是find就单条，select就多条
-	filter := bson.M{"age":bson.M{"$gte":33},"name":bson.M{"$eq":"zhang"}}
+	//filter := bson.M{"age":bson.M{"$gte":33},"name":bson.M{"$eq":"zhang"}}
+	filter := map[string]interface{}{"age":map[string]interface{}{"$gte":3},"name":map[string]interface{}{"$eq":"tang"}}
 
 	var result map[string]interface{}
 	err := coll.FindOne(context.TODO(), filter).Decode(&result)
 	if err != nil {
-		panic(err)
+		if err == mongo.ErrNoDocuments {
+			fmt.Println("没有结果")
+			return
+		} else {
+			panic(err)
+		}
 	}
 
 	for k, v := range result {
@@ -57,9 +63,10 @@ func main() {
 	findOptions := options.Find()
 	findOptions.SetLimit(int64(pageSize))
 	findOptions.SetSkip(int64(pageSize * (pageNum - 1)))
-	findOptions.SetSort(bson.M{"age": 1})
+	findOptions.SetSort(map[string]interface{}{"age": 1})
+	findOptions.SetProjection(map[string]interface{}{"name":1,"age":1})
 
-	filter := bson.M{"age":bson.M{"$gte":1}}
+	filter := map[string]interface{}{"age":map[string]interface{}{"$gte":1}}
 	cursor, err := coll.Find(context.TODO(), filter, findOptions)
 	if err != nil {
 		panic(err)
@@ -78,9 +85,9 @@ func main() {
 
 /*
 	//修改单条，如果条件是_id
-	id, _ := primitive.ObjectIDFromHex("6582b1952290aece3b63803b")
-	filter := bson.D{{"_id", id}}
-	update := bson.D{{"$set", bson.M{"addr":"shanghai"}}}
+	id, _ := primitive.ObjectIDFromHex("6585296a7670cd5b687cbcea")
+	filter := map[string]interface{}{"_id":id}
+	update := map[string]interface{}{"$set":map[string]interface{}{"addr":"shanghai"}}
 	result, err := coll.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		panic(err)
@@ -91,8 +98,8 @@ func main() {
 
 /*
 	//修改多条，如果条件不含_id
-	update := bson.D{{"$set", bson.M{"email":"a@b.c"}}}
-	filter := bson.M{"age":bson.M{"$gte":1}}
+	update := map[string]interface{}{"$set":map[string]interface{}{"email":"a@b.c"}}
+	filter := map[string]interface{}{"age":map[string]interface{}{"$gte":1}}
 	result, err := coll.UpdateMany(context.TODO(), filter, update)
 	if err != nil {
 		panic(err)
@@ -103,8 +110,8 @@ func main() {
 
 /*
 	//删除单条，如果条件含_id或limit=1
-	id, _ := primitive.ObjectIDFromHex("6582b1952290aece3b63803b")
-	filter := bson.D{{"_id", id}}
+	id, _ := primitive.ObjectIDFromHex("6585296a7670cd5b687cbce9")
+	filter := map[string]interface{}{"_id":id}
 	result, err := coll.DeleteOne(context.TODO(), filter)
 	if err != nil {
 		panic(err)
@@ -115,7 +122,7 @@ func main() {
 
 /*
 	//删除多条，如果条件不含_id或limit大于1
-	filter := bson.M{"age":bson.M{"$gt":30}}
+	filter := map[string]interface{}{"age":map[string]interface{}{"$gt":30}}
 	result, err := coll.DeleteMany(context.TODO(), filter)
 	if err != nil {
 		panic(err)
@@ -126,8 +133,7 @@ func main() {
 
 /*
 	//统计条数
-	//filter := bson.M{"age":bson.M{"$gt":1}}
-	filter := bson.M{"name":bson.M{"$in":bson.A{"lee","jun"}}}
+	filter := map[string]interface{}{"name":map[string]interface{}{"$in":[]string{"mahaha","tang"}}}
 	count, err := coll.CountDocuments(context.TODO(), filter)
 	if err != nil {
 		panic(err)
@@ -137,14 +143,14 @@ func main() {
 */
 /*
 	//sum查询
-    filter := bson.M{"age":bson.M{"$gt":100}}
-    cursor, _ := coll.Aggregate(context.Background(), []bson.M{
+    filter := map[string]interface{}{"age":map[string]interface{}{"$gt":10}}
+    cursor, _ := coll.Aggregate(context.Background(), []map[string]interface{}{
         {"$match": filter},
-        {"$group": bson.M{"_id": nil, "total": bson.M{"$sum": "$age"}}},
+        {"$group": map[string]interface{}{"_id": nil, "total": map[string]interface{}{"$sum": "$age"}}},
     })
 
     if cursor.Next(context.TODO()) {
-    	var result bson.M
+    	var result map[string]interface{}
 		cursor.Decode(&result)
 		fmt.Println(result["total"])
     } else {
@@ -152,28 +158,31 @@ func main() {
     }
 */
 
+//*
     //常见聚合count\sum\max\min\avg
-    filter := bson.M{"age":bson.M{"$gt":1}}
-    cursor, _ := coll.Aggregate(context.Background(), []bson.M{
+    filter := map[string]interface{}{"age":map[string]interface{}{"$gt":1}}
+    cursor, _ := coll.Aggregate(context.Background(), []map[string]interface{}{
         {"$match": filter},//where
         {"$limit":10},
         {"$skip":0},
-        {"$group": bson.M{"_id":"$addr",
-        	"num": bson.M{"$sum": 1},
-        	"total": bson.M{"$sum": "$age"},
-        	"avg":bson.M{"$avg": "$age"},
-        	"min":bson.M{"$min": "$age"},
-        	"max":bson.M{"$max": "$age"},
+        {"$group": map[string]interface{}{
+        	"_id":"$addr",
+        	"num": map[string]interface{}{"$sum": 1},
+        	"total": map[string]interface{}{"$sum": "$age"},
+        	"avg":map[string]interface{}{"$avg": "$age"},
+        	"min":map[string]interface{}{"$min": "$age"},
+        	"max":map[string]interface{}{"$max": "$age"},
         }},
-        {"$sort": bson.M{"total" : -1 }},//聚合结果排序
-        {"$match": bson.M{"total":bson.M{"$gt":100}}},//having
+        {"$sort": map[string]interface{}{"total" : -1 }},//聚合结果排序
+        {"$match": map[string]interface{}{"total":map[string]interface{}{"$gt":100}}},//having
     })
 
-    var result bson.M
+    var result map[string]interface{}
     for cursor.Next(context.TODO()) {
 		cursor.Decode(&result)
 		fmt.Println(result)
     }
+//*//
 }
 
 func Open() *mongo.Client {
