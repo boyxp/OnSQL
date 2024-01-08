@@ -30,6 +30,7 @@ func (p *Parser) _tree() map[string]interface{} {
 	key     := ""
 	opr     := ""
 	conds   := []map[string]interface{}{}
+
 	var value interface{}
 
 	for ; p.index < p.length; p.index++ {
