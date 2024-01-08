@@ -49,10 +49,7 @@ func NewOrm(table string, tag ...string) *Orm {
 		dbtag = tag[0]
 	}
 
-	dbname     := Dbname(dbtag)
-	collection := Open(dbtag).Database(dbname).Collection(table)
-
-	return &Orm{coll:collection}
+	return (&Orm{}).Init(dbtag, table)
 }
 
 func Open(tag string) *mongo.Client {
