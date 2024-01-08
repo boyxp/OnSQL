@@ -43,7 +43,7 @@ func Dbname(tag string) string {
 
 func Open(tag string) *mongo.Client {
 	dsn := Dsn(tag)
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dsn))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dsn).SetMinPoolSize(5).SetMaxPoolSize(100))
 	if err != nil {
 		panic(err)
 	}
