@@ -1,25 +1,16 @@
-package main
+package MongoDB
 
-import "fmt"
 import "strings"
 import "github.com/boyxp/OnSQL/tokenizer"
 
-func main() {
-	condition := "a   =  ? and b   >   ? and c >=? and (d<=? or e!=?) and (c in (   ?) or n is     null) and k is not     null"
-	//condition := "a   =  ?"
-	tokens := tokenizer.Tokenize(condition)
-	fmt.Println(tokens)
-	p := parser{}
-	fmt.Println(p.parse(tokens))
-}
-
-type parser struct{
+type Parser struct{
 	index int
 	length int
 	tokens []string
 }
 
-func (p *parser) parse(tokens []string) map[string]interface{} {
+func (p *Parser) Parse(condition string) map[string]interface{} {
+	tokens  := tokenizer.Tokenize(condition)
     p.index  = 0
     p.length = len(tokens)
     p.tokens = tokens
@@ -33,7 +24,7 @@ func (p *parser) parse(tokens []string) map[string]interface{} {
     return tree
 }
 
-func (p *parser) _tree() map[string]interface{} {
+func (p *Parser) _tree() map[string]interface{} {
 	state   := 0
 	logical := "$and"
 	key     := ""
