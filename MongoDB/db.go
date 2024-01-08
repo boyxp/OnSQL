@@ -10,7 +10,7 @@ import "go.mongodb.org/mongo-driver/mongo/options"
 var cache sync.Map
 
 func Register(tag string, dbname string, dsn string) {
-	if tag=="database" && (dbname=="" || dsn=="") {
+	if tag=="mongodb" && (dbname=="" || dsn=="") {
 		log.Printf("\033[1;31;40m%s\033[0m\n",".env配置文件不存在或database.dbname和database.dsn未设置")
 		os.Exit(1)
 	}
@@ -39,6 +39,20 @@ func Dbname(tag string) string {
 	dbname, _ := value.(string)
 
 	return dbname
+}
+
+func NewOrm(table string, tag ...string) *Orm {
+	var dbtag string
+	if len(tag)==0 {
+		dbtag = "mongodb"
+	} else {
+		dbtag = tag[0]
+	}
+
+	dbname     := Dbname(dbtag)
+	collection := Open(dbtag).Database(dbname).Collection(table)
+
+	return &Orm{coll:collection}
 }
 
 func Open(tag string) *mongo.Client {
