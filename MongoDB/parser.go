@@ -6,6 +6,7 @@ import "github.com/boyxp/OnSQL/tokenizer"
 type Parser struct{
 	index int
 	length int
+	placeholder int
 	tokens []string
 }
 
@@ -14,6 +15,7 @@ func (p *Parser) Parse(condition string) map[string]interface{} {
     p.index  = 0
     p.length = len(tokens)
     p.tokens = tokens
+    p.placeholder = 0
 
     tree := p._tree()
 
@@ -102,7 +104,15 @@ func (p *Parser) _tree() map[string]interface{} {
 								panic("syntax error")
 					}
 
-					conds = append(conds, map[string]interface{}{key: map[string]interface{}{opr: value}})
+					var placeholder int
+					if value=="?" {
+						placeholder = p.placeholder
+						p.placeholder++
+					} else {
+						placeholder = -1
+					}
+
+					conds = append(conds, map[string]interface{}{key: map[string]interface{}{opr: value, "placeholder":placeholder}})
 			case 3:
 					switch token {
 						case ")":
