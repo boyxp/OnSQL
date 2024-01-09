@@ -1,7 +1,9 @@
 package MongoDB
 
 import "os"
+import "context"
 import "go.mongodb.org/mongo-driver/mongo"
+import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type Orm struct {
 	coll *mongo.Collection
@@ -17,7 +19,12 @@ func (O *Orm) Init(dbtag string, table string) *Orm {
 }
 
 func (O *Orm) Insert(data map[string]interface{}) string {
-	return ""
+	res, err := O.coll.InsertOne(context.TODO(), data)
+	if err != nil {
+		panic(err)
+	}
+
+	return res.InsertedID.(primitive.ObjectID).Hex()
 }
 
 func (O *Orm) Delete() int64 {
