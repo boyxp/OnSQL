@@ -1,7 +1,10 @@
 package MongoDB
 
+import "sync"
 import "strings"
 import "github.com/boyxp/OnSQL/tokenizer"
+
+var filter sync.Map
 
 type Parser struct{
 	index int
@@ -11,6 +14,11 @@ type Parser struct{
 }
 
 func (p *Parser) Parse(condition string) map[string]interface{} {
+	value, ok := filter.Load(condition);
+    if ok {
+       	return value.(map[string]interface{})
+    }
+
 	tokens  := tokenizer.Tokenize(condition)
     p.index  = 0
     p.length = len(tokens)
@@ -22,6 +30,8 @@ func (p *Parser) Parse(condition string) map[string]interface{} {
     if _, ok := tree["conds"];!ok {
     	panic("syntax error")
     }
+
+    filter.Store(condition, tree)
 
     return tree
 }
