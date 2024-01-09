@@ -27,7 +27,7 @@ func (p *Parser) Parse(condition string) map[string]interface{} {
 
     tree := p._tree()
 
-    if _, ok := tree["conds"];!ok {
+    if len(tree)==0 {
     	panic("syntax error")
     }
 
@@ -122,7 +122,7 @@ func (p *Parser) _tree() map[string]interface{} {
 						placeholder = -1
 					}
 
-					conds = append(conds, map[string]interface{}{key: map[string]interface{}{opr: value, "placeholder":placeholder}})
+					conds = append(conds, map[string]interface{}{key: map[string]interface{}{"opr":opr, "value":value, "placeholder":placeholder}})
 			case 3:
 					switch strings.ToLower(token) {
 						case ")":
@@ -143,5 +143,5 @@ func (p *Parser) _tree() map[string]interface{} {
 		state++
 	}
 
-	return map[string]interface{}{"logical": logical, "conds": conds}
+	return map[string]interface{}{logical: conds}
 }
