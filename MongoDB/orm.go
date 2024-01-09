@@ -1,7 +1,7 @@
 package MongoDB
 
 import "os"
-//import "fmt"
+import "fmt"
 import "context"
 import "strings"
 import "go.mongodb.org/mongo-driver/mongo"
@@ -10,12 +10,12 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 type Orm struct {
 	coll *mongo.Collection
 
-	selectFields string
+	selectFields map[string]interface{}
 	selectConds []string
 	selectParams []interface{}
-	selectPage int
-	selectLimit int
-	selectOrder []string
+	selectPage int64
+	selectLimit int64
+	selectOrder map[string]interface{}
 	selectGroup []string
 	selectHaving string
 
@@ -23,9 +23,11 @@ type Orm struct {
 }
 
 func (O *Orm) Init(dbtag string, table string) *Orm {
-	dbname := Dbname(dbtag)
-	O.coll  = Open(dbtag).Database(dbname).Collection(table)
-	O.debug = os.Getenv("debug")
+	dbname        := Dbname(dbtag)
+	O.coll         = Open(dbtag).Database(dbname).Collection(table)
+	O.debug        = os.Getenv("debug")
+	O.selectFields = map[string]interface{}{}
+	O.selectOrder  = map[string]interface{}{}
 
 	return O
 }
@@ -48,6 +50,11 @@ func (O *Orm) Update(data map[string]interface{}) int64 {
 }
 
 func (O *Orm) Field(fields string) *Orm {
+	_fields := strings.Split(fields, ",")
+	for _, field := range _fields {
+		O.selectFields[field] = 1
+	}
+
 	return O
 }
 
@@ -213,14 +220,37 @@ func (O *Orm) Having(field string, opr string, criteria int) *Orm {
 }
 
 func (O *Orm) Order(field string, sort string) *Orm {
+	sort = strings.ToTitle(sort)
+	if sort!="DESC" && sort!="ASC" {
+		panic("排序类型只能是asc或desc")
+	}
+
+	if sort=="ASC" {
+		O.selectOrder[field] = 1
+	} else {
+		O.selectOrder[field] = -1
+	}
+fmt.Println(O.selectOrder)
 	return O
 }
 
-func (O *Orm) Page(page int) *Orm {
+func (O *Orm) Page(page int64) *Orm {
+	if page < 1 {
+		panic("页码不应小于1")
+	}
+
+	O.selectPage = page
+
 	return O
 }
 
-func (O *Orm) Limit(limit int) *Orm {
+func (O *Orm) Limit(limit int64) *Orm {
+	if limit < 1 {
+		panic("每页条数不应小于1")
+	}
+
+	O.selectLimit = limit
+
 	return O
 }
 
