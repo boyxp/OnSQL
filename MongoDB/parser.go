@@ -106,7 +106,7 @@ func (p *Parser) _tree() map[string]interface{} {
 								panic("syntax error")
 					}
 			case 2:
-					switch token {
+					switch strings.ToLower(token) {
 						case "null":
 						case "?":
 								value = token
@@ -124,7 +124,7 @@ func (p *Parser) _tree() map[string]interface{} {
 
 					conds = append(conds, map[string]interface{}{key: map[string]interface{}{opr: value, "placeholder":placeholder}})
 			case 3:
-					switch token {
+					switch strings.ToLower(token) {
 						case ")":
 								return map[string]interface{}{"logical": logical, "conds": conds}
 						case "and":
