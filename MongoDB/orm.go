@@ -230,7 +230,7 @@ func (O *Orm) Order(field string, sort string) *Orm {
 	} else {
 		O.selectOrder[field] = -1
 	}
-fmt.Println(O.selectOrder)
+
 	return O
 }
 
@@ -255,6 +255,48 @@ func (O *Orm) Limit(limit int64) *Orm {
 }
 
 func (O *Orm) Select() []map[string]interface{} {
+	sql := strings.Join(O.selectConds, " AND ")
+	if len(sql)>0 {
+		filter := (&Parser{}).Parse(sql)
+		query  := O.bind(filter)
+		fmt.Println(query)
+	}
+
+	fmt.Println(filter)
+	return nil
+}
+
+func (O *Orm) bind(filter map[string]interface{}) map[string]interface{} {
+	for k,v := range filter {
+		fmt.Println(k,v)
+		switch k {
+			case "$and": fallthrough
+			case "$or":
+						var cond []map[string]interface{} = []map[string]interface{}{}
+
+						for _,e := range v.([]map[string]interface{}) {
+							cond = append(cond, O.bind(e))
+						}
+
+						return map[string]interface{}{k:cond}
+			default:
+					set := v.(map[string]interface{})
+					value := set["value"]
+					opr   := set["opr"].(string)
+					idx   := set["placeholder"].(int)
+					if value=="?" {
+						param := O.selectParams[idx]
+						return map[string]interface{}{
+							k:map[string]interface{}{opr:param},
+						}
+					} else {
+						return map[string]interface{}{
+							k:map[string]interface{}{opr:value},
+						}
+					}
+		}
+	}
+
 	return nil
 }
 
