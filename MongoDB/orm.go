@@ -7,6 +7,7 @@ import "strings"
 import "go.mongodb.org/mongo-driver/mongo"
 import "go.mongodb.org/mongo-driver/bson/primitive"
 import "go.mongodb.org/mongo-driver/mongo/options"
+import "go.mongodb.org/mongo-driver/bson"
 
 type Orm struct {
 	coll *mongo.Collection
@@ -16,7 +17,7 @@ type Orm struct {
 	selectParams []interface{}
 	selectPage int64
 	selectLimit int64
-	selectOrder map[string]interface{}
+	selectOrder bson.D
 	selectGroup []string
 	selectHaving string
 
@@ -28,7 +29,7 @@ func (O *Orm) Init(dbtag string, table string) *Orm {
 	O.coll         = Open(dbtag).Database(dbname).Collection(table)
 	O.debug        = os.Getenv("debug")
 	O.selectFields = map[string]interface{}{}
-	O.selectOrder  = map[string]interface{}{}
+	O.selectOrder  = bson.D{}
 	O.selectPage   = 1
 	O.selectLimit  = 20
 
@@ -229,9 +230,9 @@ func (O *Orm) Order(field string, sort string) *Orm {
 	}
 
 	if sort=="ASC" {
-		O.selectOrder[field] = 1
+		O.selectOrder = append(O.selectOrder, bson.E{field, 1})
 	} else {
-		O.selectOrder[field] = -1
+		O.selectOrder = append(O.selectOrder, bson.E{field, -1})
 	}
 
 	return O
@@ -277,9 +278,11 @@ func (O *Orm) Select() []map[string]interface{} {
 	findOptions := options.Find()
 	findOptions.SetLimit(O.selectLimit)
 	findOptions.SetSkip(int64(O.selectLimit * (O.selectPage - 1)))
+
 	if len(O.selectOrder)>0 {
 		findOptions.SetSort(O.selectOrder)
 	}
+
 	if len(O.selectFields)>0 {
 		findOptions.SetProjection(O.selectFields)
 	}
