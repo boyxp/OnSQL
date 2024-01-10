@@ -348,8 +348,36 @@ func (O *Orm) Values(field string) []interface{} {
 	return result
 }
 
-func (O *Orm) Columns(fields ...string) map[string]string {
-	return nil
+func (O *Orm) Columns(fields ...string) map[string]interface{} {
+	var key   string
+	var value string
+
+	if len(fields)==0 {
+		panic("参数不可为空")
+
+	} else if(len(fields)==1) {
+		key   = "_id"
+		value = fields[0]
+
+		O.selectFields = map[string]interface{}{value:1}
+
+	} else {
+		key   = fields[1]
+		value = fields[0]
+
+		O.selectFields = map[string]interface{}{value:1,key:1}
+	}
+
+	list := O.Select()
+
+	var result = map[string]interface{}{}
+	if len(list)>0 {
+		for _, v := range list {
+			result[v[key].(string)] = v[value]
+		}
+	}
+
+	return result
 }
 
 func (O *Orm) Sum(field string) int64 {
