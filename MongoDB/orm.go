@@ -318,12 +318,34 @@ func (O *Orm) Find() map[string]interface{} {
 	return result
 }
 
-func (O *Orm) Value(field string) string {
-	return ""
+func (O *Orm) Value(field string) interface{} {
+	O.selectFields = map[string]interface{}{field:1}
+
+	doc := O.Find()
+
+	value, ok := doc[field]
+	if ok {
+		return value
+	}
+
+	return nil
 }
 
-func (O *Orm) Values(field string) []string {
-	return nil
+func (O *Orm) Values(field string) []interface{} {
+	O.selectFields = map[string]interface{}{field:1}
+
+	list := O.Select()
+
+	result := []interface{}{}
+
+	for _, v := range list {
+		value, ok := v[field]
+		if ok {
+			result = append(result, value)
+		}
+	}
+
+	return result
 }
 
 func (O *Orm) Columns(fields ...string) map[string]string {
