@@ -259,21 +259,7 @@ func (O *Orm) Limit(limit int64) *Orm {
 }
 
 func (O *Orm) Select() []map[string]interface{} {
-	sql := strings.Join(O.selectConds, " AND ")
-	var filter map[string]interface{}
-	if len(sql)>0 {
-		scheme := (&Parser{}).Parse(sql)
-		if O.debug=="yes" {
-			log.Println(scheme)
-		}
-
-		filter  = O.bind(scheme)
-		if O.debug=="yes" {
-			log.Println(filter)
-		}
-	} else {
-		filter = map[string]interface{}{}
-	}
+	filter := O.filter()
 
 	findOptions := options.Find()
 	findOptions.SetLimit(O.selectLimit)
@@ -304,6 +290,76 @@ func (O *Orm) Select() []map[string]interface{} {
 	}
 
 	return result
+}
+
+func (O *Orm) Find() map[string]interface{} {
+	filter := O.filter()
+
+	findOptions := options.FindOne()
+
+	if len(O.selectOrder)>0 {
+		findOptions.SetSort(O.selectOrder)
+	}
+
+	if len(O.selectFields)>0 {
+		findOptions.SetProjection(O.selectFields)
+	}
+
+	var result map[string]interface{}
+	err := O.coll.FindOne(context.TODO(), filter, findOptions).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil
+		} else {
+			panic(err)
+		}
+	}
+
+	return result
+}
+
+func (O *Orm) Value(field string) string {
+	return ""
+}
+
+func (O *Orm) Values(field string) []string {
+	return nil
+}
+
+func (O *Orm) Columns(fields ...string) map[string]string {
+	return nil
+}
+
+func (O *Orm) Sum(field string) int64 {
+	return 1
+}
+
+func (O *Orm) Count() int64 {
+	return 1
+}
+
+func (O *Orm) Exist(primary string) bool {
+	return true
+}
+
+func (O *Orm) filter() map[string]interface{} {
+	sql := strings.Join(O.selectConds, " AND ")
+	var filter map[string]interface{}
+	if len(sql)>0 {
+		scheme := (&Parser{}).Parse(sql)
+		if O.debug=="yes" {
+			log.Println(scheme)
+		}
+
+		filter = O.bind(scheme)
+		if O.debug=="yes" {
+			log.Println(filter)
+		}
+	} else {
+		filter = map[string]interface{}{}
+	}
+
+	return filter
 }
 
 func (O *Orm) bind(filter map[string]interface{}) map[string]interface{} {
@@ -337,33 +393,5 @@ func (O *Orm) bind(filter map[string]interface{}) map[string]interface{} {
 	}
 
 	return nil
-}
-
-func (O *Orm) Find() map[string]interface{} {
-	return nil
-}
-
-func (O *Orm) Value(field string) string {
-	return ""
-}
-
-func (O *Orm) Values(field string) []string {
-	return nil
-}
-
-func (O *Orm) Columns(fields ...string) map[string]string {
-	return nil
-}
-
-func (O *Orm) Sum(field string) int64 {
-	return 1
-}
-
-func (O *Orm) Count() int64 {
-	return 1
-}
-
-func (O *Orm) Exist(primary string) bool {
-	return true
 }
 
