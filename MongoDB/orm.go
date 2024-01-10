@@ -46,7 +46,13 @@ func (O *Orm) Insert(data map[string]interface{}) string {
 }
 
 func (O *Orm) Delete() int64 {
-	return 1
+	filter := O.filter()
+	result, err := O.coll.DeleteMany(context.TODO(), filter)
+	if err != nil {
+		panic(err)
+	}
+
+	return result.DeletedCount
 }
 
 func (O *Orm) Update(data map[string]interface{}) int64 {
