@@ -394,7 +394,20 @@ func (O *Orm) Count() int64 {
 	return count
 }
 
-func (O *Orm) Exist(primary string) bool {
+func (O *Orm) Exist(id string) bool {
+	var result map[string]interface{}
+
+	_id, _ := primitive.ObjectIDFromHex(id)
+	filter := map[string]interface{}{"_id":_id}
+	err    := O.coll.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return false
+		} else {
+			panic(err)
+		}
+	}
+
 	return true
 }
 
