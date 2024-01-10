@@ -109,8 +109,9 @@ func (O *Orm) Where(conds ...interface{}) *Orm {
 
 	switch args_len {
 		case 1 :
+				_id, _ := primitive.ObjectIDFromHex(field)
 				O.selectConds  = append(O.selectConds, "_id=?")
-				O.selectParams = append(O.selectParams, field)
+				O.selectParams = append(O.selectParams, _id)
 		case 2 :
 				O.selectConds  = append(O.selectConds, field+"=?")
 				O.selectParams = append(O.selectParams, conds[1])
