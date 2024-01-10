@@ -50,7 +50,14 @@ func (O *Orm) Delete() int64 {
 }
 
 func (O *Orm) Update(data map[string]interface{}) int64 {
-	return 1
+	filter := O.filter()
+	update := map[string]interface{}{"$set":data}
+	result, err := O.coll.UpdateMany(context.TODO(), filter, update)
+	if err != nil {
+		panic(err)
+	}
+
+	return result.ModifiedCount
 }
 
 func (O *Orm) Field(fields string) *Orm {
