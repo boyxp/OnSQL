@@ -1,11 +1,12 @@
 package MongoDB
 
 import "os"
-import "fmt"
+import "log"
 import "context"
 import "strings"
 import "go.mongodb.org/mongo-driver/mongo"
 import "go.mongodb.org/mongo-driver/bson/primitive"
+import "go.mongodb.org/mongo-driver/mongo/options"
 
 type Orm struct {
 	coll *mongo.Collection
@@ -28,6 +29,8 @@ func (O *Orm) Init(dbtag string, table string) *Orm {
 	O.debug        = os.Getenv("debug")
 	O.selectFields = map[string]interface{}{}
 	O.selectOrder  = map[string]interface{}{}
+	O.selectPage   = 1
+	O.selectLimit  = 20
 
 	return O
 }
@@ -256,19 +259,52 @@ func (O *Orm) Limit(limit int64) *Orm {
 
 func (O *Orm) Select() []map[string]interface{} {
 	sql := strings.Join(O.selectConds, " AND ")
+	var filter map[string]interface{}
 	if len(sql)>0 {
-		filter := (&Parser{}).Parse(sql)
-		query  := O.bind(filter)
-		fmt.Println(query)
+		scheme := (&Parser{}).Parse(sql)
+		if O.debug=="yes" {
+			log.Println(scheme)
+		}
+
+		filter  = O.bind(scheme)
+		if O.debug=="yes" {
+			log.Println(filter)
+		}
+	} else {
+		filter = map[string]interface{}{}
 	}
 
-	fmt.Println(filter)
-	return nil
+	findOptions := options.Find()
+	findOptions.SetLimit(O.selectLimit)
+	findOptions.SetSkip(int64(O.selectLimit * (O.selectPage - 1)))
+	if len(O.selectOrder)>0 {
+		findOptions.SetSort(O.selectOrder)
+	}
+	if len(O.selectFields)>0 {
+		findOptions.SetProjection(O.selectFields)
+	}
+
+	cursor, err := O.coll.Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		panic(err)
+	}
+
+	var list []map[string]interface{}
+	if err = cursor.All(context.TODO(), &list); err != nil {
+		panic(err)
+	}
+
+	result := []map[string]interface{}{}
+	for _, v := range list {
+		cursor.Decode(&v)
+		result = append(result, v)
+	}
+
+	return result
 }
 
 func (O *Orm) bind(filter map[string]interface{}) map[string]interface{} {
 	for k,v := range filter {
-		fmt.Println(k,v)
 		switch k {
 			case "$and": fallthrough
 			case "$or":
