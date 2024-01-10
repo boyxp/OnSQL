@@ -394,8 +394,20 @@ func (O *Orm) Columns(fields ...string) map[string]interface{} {
 	return result
 }
 
-func (O *Orm) Sum(field string) int64 {
-	return 1
+func (O *Orm) Sum(field string) int32 {
+    filter    := O.filter()
+    cursor, _ := O.coll.Aggregate(context.Background(), []map[string]interface{}{
+        {"$match": filter},
+        {"$group": map[string]interface{}{"_id": nil, "sum": map[string]interface{}{"$sum": "$"+field}}},
+    })
+
+    if cursor.Next(context.TODO()) {
+    	var result map[string]interface{}
+		cursor.Decode(&result)
+		return result["sum"].(int32)
+    }
+
+    return 0
 }
 
 func (O *Orm) Count() int64 {
