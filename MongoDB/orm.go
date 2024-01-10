@@ -385,7 +385,13 @@ func (O *Orm) Sum(field string) int64 {
 }
 
 func (O *Orm) Count() int64 {
-	return 1
+	filter := O.filter()
+	count, err := O.coll.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		panic(err)
+	}
+
+	return count
 }
 
 func (O *Orm) Exist(primary string) bool {
