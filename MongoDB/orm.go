@@ -237,13 +237,8 @@ func (O *Orm) Where(conds ...interface{}) *Orm {
 										criteria = append(criteria, "_in_query_placeholder_")
 									}
 
-									placeholders := []string{}
-									for _,v := range criteria {
-										placeholders   = append(placeholders, "?")
-										O.selectParams = append(O.selectParams, v)
-									}
-
-									O.selectConds  = append(O.selectConds, field+" "+opr+"("+strings.Join(placeholders, ",")+")")
+									O.selectConds  = append(O.selectConds, field+" "+opr+" ?")
+									O.selectParams = append(O.selectParams, criteria)
 
 					case "IS"     : fallthrough
 					case "IS NOT" :
@@ -627,6 +622,7 @@ func (O *Orm) Exist(id string) bool {
 
 func (O *Orm) filter() map[string]interface{} {
 	sql := strings.Join(O.selectConds, " AND ")
+
 	var filter map[string]interface{}
 	if len(sql)>0 {
 		scheme := (&Parser{}).Parse(sql)
