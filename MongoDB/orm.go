@@ -4,6 +4,7 @@ import "os"
 import "log"
 import "context"
 import "strings"
+import "strconv"
 import "go.mongodb.org/mongo-driver/mongo"
 import "go.mongodb.org/mongo-driver/bson/primitive"
 import "go.mongodb.org/mongo-driver/mongo/options"
@@ -18,7 +19,7 @@ type Orm struct {
 	selectPage int64
 	selectLimit int64
 	selectOrder bson.D
-	selectGroup []string
+	selectGroup map[string]interface{}
 	selectHaving string
 
 	debug string
@@ -30,6 +31,7 @@ func (O *Orm) Init(dbtag string, table string) *Orm {
 	O.debug        = os.Getenv("debug")
 	O.selectFields = map[string]interface{}{}
 	O.selectOrder  = bson.D{}
+	O.selectGroup  = map[string]interface{}{}
 	O.selectPage   = 1
 	O.selectLimit  = 20
 
@@ -68,8 +70,57 @@ func (O *Orm) Update(data map[string]interface{}) int64 {
 
 func (O *Orm) Field(fields string) *Orm {
 	_fields := strings.Split(fields, ",")
-	for _, field := range _fields {
-		O.selectFields[field] = 1
+	for k:=0;k<len(_fields);k++ {
+		field := strings.TrimSpace(_fields[k])
+
+		left_idx := strings.Index(field, "(")
+		//聚合或函数字段
+		if left_idx>-1 {
+			right_idx := strings.Index(field, ")")
+			if right_idx==-1 {
+				k++
+				field = field+"^"+strings.TrimSpace(_fields[k])
+				right_idx = strings.Index(field, ")")
+			}
+
+			aggs      := strings.ToLower(field[0:left_idx])
+			alias     := strings.TrimSpace(field[right_idx+1:])
+			aggs_field:= strings.TrimSpace(field[left_idx+1:right_idx])
+
+			if len(alias)==0 {
+				alias = aggs+"_"+strconv.Itoa(k)
+			} else {
+				space := strings.LastIndex(alias, " ")
+				if space>-1 {
+					alias = alias[space+1:]
+				}
+			}
+
+			switch aggs {
+				case "count" : O.selectGroup[alias] = map[string]interface{}{"$sum": 1}
+				case "sum"   : fallthrough
+				case "avg"   : fallthrough
+				case "max"   : fallthrough
+				case "min"   : O.selectGroup[alias] = map[string]interface{}{"$"+aggs: "$"+aggs_field}
+				case "date_format":
+								split_idx := strings.Index(aggs_field, "^")
+								if split_idx==-1 {
+									panic("date_format必须有参数")
+								}
+								aggs_param := strings.Trim(aggs_field[split_idx+1:],"'")
+								aggs_field  = aggs_field[0:split_idx]
+
+								O.selectGroup["_id"] = map[string]interface{}{"$dateToString": map[string]interface{}{ "format": aggs_param, "date": "$"+aggs_field}}
+
+				default      : panic("不支持的方法："+aggs)
+			}
+
+			O.selectFields[alias] = 1
+
+		//普通字段
+		} else {
+			O.selectFields[field] = 1
+		}
 	}
 
 	return O
