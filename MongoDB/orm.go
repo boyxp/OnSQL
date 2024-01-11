@@ -558,18 +558,50 @@ func (O *Orm) Sum(field string) int32 {
     return 0
 }
 
-func (O *Orm) Count() int64 {
-	if len(O.selectGroup)>0 {
-		panic("聚合查询不支持此操作")
-	}
-
+func (O *Orm) Count() int32 {
 	filter := O.filter()
-	count, err := O.coll.CountDocuments(context.TODO(), filter)
-	if err != nil {
-		panic(err)
-	}
 
-	return count
+	if len(O.selectGroupId)>0 {
+		aggs := []map[string]interface{}{}
+
+		aggs = append(aggs, map[string]interface{}{"$match": filter})
+
+		O.selectGroup["_id"] = O.selectGroupId
+		aggs = append(aggs, map[string]interface{}{"$group":O.selectGroup})
+
+		if len(O.selectHaving)>0 {
+			aggs = append(aggs, map[string]interface{}{"$match":O.selectHaving})
+		}
+
+		aggs = append(aggs, map[string]interface{}{"$count":"total"})
+
+		if O.debug=="yes" {
+			log.Println(aggs)
+		}
+
+	    //常见聚合count\sum\max\min\avg
+	    var err error
+	    cursor, err := O.coll.Aggregate(context.Background(), aggs)
+		if err != nil {
+			panic(err)
+		}
+
+		if cursor.Next(context.TODO()) {
+    		var result map[string]interface{}
+			cursor.Decode(&result)
+			return result["total"].(int32)
+    	}
+
+		return 0
+
+	} else {
+		count, err := O.coll.CountDocuments(context.TODO(), filter)
+		if err != nil {
+			panic(err)
+		}
+
+		return int32(count)
+	}
 }
 
 func (O *Orm) Exist(id string) bool {
