@@ -322,10 +322,9 @@ func (O *Orm) Order(field string, sort string) *Orm {
 	}
 
 	if len(O.selectGroup)>0 {
-		_, ok1 := O.selectGroup[field]
-		_, ok2 := O.selectGroupId[field]
-		if !ok1 && !ok2 {
-			panic("聚合查询排序只能是聚合字段或别名")
+		_, ok := O.selectGroup[field]
+		if !ok {
+			panic("聚合查询排序只能是聚合字段")
 		}
 	}
 
@@ -360,30 +359,69 @@ func (O *Orm) Limit(limit int64) *Orm {
 
 func (O *Orm) Select() []map[string]interface{} {
 	filter := O.filter()
-
-	findOptions := options.Find()
-	findOptions.SetLimit(O.selectLimit)
-	findOptions.SetSkip(int64(O.selectLimit * (O.selectPage - 1)))
-
-	if len(O.selectOrder)>0 {
-		findOptions.SetSort(O.selectOrder)
-	}
-
-	if len(O.selectFields)>0 {
-		findOptions.SetProjection(O.selectFields)
-	}
-
-	cursor, err := O.coll.Find(context.TODO(), filter, findOptions)
-	if err != nil {
-		panic(err)
-	}
-
-	var list []map[string]interface{}
-	if err = cursor.All(context.TODO(), &list); err != nil {
-		panic(err)
-	}
-
 	result := []map[string]interface{}{}
+
+	var cursor *mongo.Cursor
+
+	//聚合查询
+	if len(O.selectGroup)>0 {
+		aggs := []map[string]interface{}{}
+
+		aggs = append(aggs, map[string]interface{}{"$match": filter})
+
+		O.selectGroup["_id"] = O.selectGroupId
+		aggs = append(aggs, map[string]interface{}{"$group":O.selectGroup})
+
+		if len(O.selectOrder)>0 {
+			aggs = append(aggs, map[string]interface{}{"$sort":O.selectOrder})
+		}
+
+		if len(O.selectHaving)>0 {
+			aggs = append(aggs, map[string]interface{}{"$match":O.selectHaving})
+		}
+
+		aggs = append(aggs, map[string]interface{}{"$skip": int64(O.selectLimit * (O.selectPage - 1))})
+		aggs = append(aggs, map[string]interface{}{"$limit": O.selectLimit})
+
+		if O.debug=="yes" {
+			log.Println(aggs)
+		}
+
+	    //常见聚合count\sum\max\min\avg
+	    var err error
+	    cursor, err = O.coll.Aggregate(context.Background(), aggs)
+		if err != nil {
+			panic(err)
+		}
+
+	    //普通查询
+	} else {
+
+		findOptions := options.Find()
+		findOptions.SetLimit(O.selectLimit)
+		findOptions.SetSkip(int64(O.selectLimit * (O.selectPage - 1)))
+
+		if len(O.selectOrder)>0 {
+			findOptions.SetSort(O.selectOrder)
+		}
+
+		if len(O.selectFields)>0 {
+			findOptions.SetProjection(O.selectFields)
+		}
+
+		var err error
+		cursor, err = O.coll.Find(context.TODO(), filter, findOptions)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	//遍历取出结果
+	var list []map[string]interface{}
+	if err := cursor.All(context.TODO(), &list); err != nil {
+		panic(err)
+	}
+
 	for _, v := range list {
 		cursor.Decode(&v)
 		result = append(result, v)
