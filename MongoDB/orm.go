@@ -284,6 +284,10 @@ func (O *Orm) Where(conds ...interface{}) *Orm {
 }
 
 func (O *Orm) Group(fields ...string) *Orm {
+	if len(O.selectGroup)==0 {
+		panic("非聚合查询不支持此操作，如需聚合请先通过Field()设置聚合字段")
+	}
+
 	for _, field := range fields {
 		_, ok := O.selectGroupId[field]
 		if !ok {
@@ -295,6 +299,10 @@ func (O *Orm) Group(fields ...string) *Orm {
 }
 
 func (O *Orm) Having(field string, opr string, criteria int) *Orm {
+	if len(O.selectGroup)==0 {
+		panic("非聚合查询不支持此操作")
+	}
+
 	_, ok := O.selectGroup[field]
 	if !ok {
 		panic(field+"：having条件字段必须是聚合别名")
@@ -431,6 +439,10 @@ func (O *Orm) Select() []map[string]interface{} {
 }
 
 func (O *Orm) Find() map[string]interface{} {
+	if len(O.selectGroup)>0 {
+		panic("聚合查询不支持此操作")
+	}
+
 	filter := O.filter()
 
 	findOptions := options.FindOne()
@@ -470,6 +482,10 @@ func (O *Orm) Value(field string) interface{} {
 }
 
 func (O *Orm) Values(field string) []interface{} {
+	if len(O.selectGroup)>0 {
+		panic("聚合查询不支持此操作")
+	}
+
 	O.selectFields = map[string]interface{}{field:1}
 
 	list := O.Select()
@@ -487,6 +503,10 @@ func (O *Orm) Values(field string) []interface{} {
 }
 
 func (O *Orm) Columns(fields ...string) map[string]interface{} {
+	if len(O.selectGroup)>0 {
+		panic("聚合查询不支持此操作")
+	}
+
 	var key   string
 	var value string
 
@@ -519,6 +539,10 @@ func (O *Orm) Columns(fields ...string) map[string]interface{} {
 }
 
 func (O *Orm) Sum(field string) int32 {
+	if len(O.selectGroup)>0 {
+		panic("聚合查询不支持此操作")
+	}
+
     filter    := O.filter()
     cursor, _ := O.coll.Aggregate(context.Background(), []map[string]interface{}{
         {"$match": filter},
@@ -535,6 +559,10 @@ func (O *Orm) Sum(field string) int32 {
 }
 
 func (O *Orm) Count() int64 {
+	if len(O.selectGroup)>0 {
+		panic("聚合查询不支持此操作")
+	}
+
 	filter := O.filter()
 	count, err := O.coll.CountDocuments(context.TODO(), filter)
 	if err != nil {
@@ -545,6 +573,10 @@ func (O *Orm) Count() int64 {
 }
 
 func (O *Orm) Exist(id string) bool {
+	if len(O.selectGroup)>0 {
+		panic("聚合查询不支持此操作")
+	}
+
 	var result map[string]interface{}
 
 	_id, _ := primitive.ObjectIDFromHex(id)
