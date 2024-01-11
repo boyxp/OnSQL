@@ -19,8 +19,9 @@ type Orm struct {
 	selectPage int64
 	selectLimit int64
 	selectOrder bson.D
+	selectGroupId map[string]interface{}
 	selectGroup map[string]interface{}
-	selectHaving string
+	selectHaving map[string]interface{}
 
 	debug string
 }
@@ -31,7 +32,9 @@ func (O *Orm) Init(dbtag string, table string) *Orm {
 	O.debug        = os.Getenv("debug")
 	O.selectFields = map[string]interface{}{}
 	O.selectOrder  = bson.D{}
+	O.selectGroupId= map[string]interface{}{}
 	O.selectGroup  = map[string]interface{}{}
+	O.selectHaving = map[string]interface{}{}
 	O.selectPage   = 1
 	O.selectLimit  = 20
 
@@ -110,7 +113,7 @@ func (O *Orm) Field(fields string) *Orm {
 								aggs_param := strings.Trim(aggs_field[split_idx+1:],"'")
 								aggs_field  = aggs_field[0:split_idx]
 
-								O.selectGroup["_id"] = map[string]interface{}{"$dateToString": map[string]interface{}{ "format": aggs_param, "date": "$"+aggs_field}}
+								O.selectGroupId[alias] = map[string]interface{}{"$dateToString": map[string]interface{}{ "format": aggs_param, "date": "$"+aggs_field}}
 
 				default      : panic("不支持的方法："+aggs)
 			}
@@ -281,10 +284,34 @@ func (O *Orm) Where(conds ...interface{}) *Orm {
 }
 
 func (O *Orm) Group(fields ...string) *Orm {
+	for _, field := range fields {
+		_, ok := O.selectGroupId[field]
+		if !ok {
+			O.selectGroupId[field] = "$"+field
+		}
+	}
+
 	return O
 }
 
 func (O *Orm) Having(field string, opr string, criteria int) *Orm {
+	_, ok := O.selectGroup[field]
+	if !ok {
+		panic(field+"：having条件字段必须是聚合别名")
+	}
+
+	var _opr string
+	switch opr {
+		case "="  : _opr = "$eq"
+		case ">"  : _opr = "$gt"
+		case ">=" : _opr = "$gte"
+		case "<"  : _opr = "$lt"
+		case "<=" : _opr = "$lte"
+		default   : panic("having操作符仅支持=、>、>=、<、<=")
+	}
+
+	O.selectHaving[field] = map[string]interface{}{_opr:criteria}
+
 	return O
 }
 
@@ -292,6 +319,14 @@ func (O *Orm) Order(field string, sort string) *Orm {
 	sort = strings.ToTitle(sort)
 	if sort!="DESC" && sort!="ASC" {
 		panic("排序类型只能是asc或desc")
+	}
+
+	if len(O.selectGroup)>0 {
+		_, ok1 := O.selectGroup[field]
+		_, ok2 := O.selectGroupId[field]
+		if !ok1 && !ok2 {
+			panic("聚合查询排序只能是聚合字段或别名")
+		}
 	}
 
 	if sort=="ASC" {
