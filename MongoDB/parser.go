@@ -73,7 +73,7 @@ func (p *Parser) _tree() map[string]interface{} {
 						case "<=" :
 									opr = "$lte"
 						case "like" :
-									opr = "$like"
+									opr = "$regex"
 						case "regexp" :
 									opr = "$regex"
 						case "near" :
