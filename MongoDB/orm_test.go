@@ -14,16 +14,16 @@ var id string
 //插入
 func TestInsert(t *testing.T) {
 	O := Model{"goods"}
-	O.Insert(map[string]interface{}{"name":"可口可乐","price":100,"detail":"...","category":"饮料"})
-	O.Insert(map[string]interface{}{"name":"小红帽","price":200,"detail":"...","category":"服装"})
-	O.Insert(map[string]interface{}{"name":"雪碧","price":300,"category":"饮料"})
-	O.Insert(map[string]interface{}{"name":"高跟鞋","price":400,"detail":"...","category":"服装"})
-	O.Insert(map[string]interface{}{"name":"芬达","price":500,"detail":"...","category":"饮料"})
-	O.Insert(map[string]interface{}{"name":"海魂衫","price":600,"category":"服装"})
-	O.Insert(map[string]interface{}{"name":"和其正","price":700,"detail":"...","category":"饮料"})
-	O.Insert(map[string]interface{}{"name":"领带","price":800,"detail":"...","category":"服装"})
-	O.Insert(map[string]interface{}{"name":"美年达","price":900,"category":"饮料"})
-	id = O.Insert(map[string]interface{}{"name":"呢子大衣","price":200,"detail":"...","category":"服装"})
+	O.Insert(map[string]any{"name":"可口可乐","price":100,"detail":"...","category":"饮料"})
+	O.Insert(map[string]any{"name":"小红帽","price":200,"detail":"...","category":"服装"})
+	O.Insert(map[string]any{"name":"雪碧","price":300,"category":"饮料"})
+	O.Insert(map[string]any{"name":"高跟鞋","price":400,"detail":"...","category":"服装"})
+	O.Insert(map[string]any{"name":"芬达","price":500,"detail":"...","category":"饮料"})
+	O.Insert(map[string]any{"name":"海魂衫","price":600,"category":"服装"})
+	O.Insert(map[string]any{"name":"和其正","price":700,"detail":"...","category":"饮料"})
+	O.Insert(map[string]any{"name":"领带","price":800,"detail":"...","category":"服装"})
+	O.Insert(map[string]any{"name":"美年达","price":900,"category":"饮料"})
+	id = O.Insert(map[string]any{"name":"呢子大衣","price":200,"detail":"...","category":"服装"})
 }
 
 //主键条件查询
@@ -87,10 +87,10 @@ func TestSelectGtEq(t *testing.T) {
 //多条件查询
 func TestSelectMulti(t *testing.T) {
 	O := Model{"goods"}
-	rows := O.Where(map[string]interface{}{
+	rows := O.Where(map[string]any{
 		"category":"服装",
-		"name":[]interface{}{"is not", "null"},
-		"price":[]interface{}{">=", 200},
+		"name":[]any{"is not", "null"},
+		"price":[]any{">=", 200},
 	}).Select()
 
 	if len(rows)>0 {
@@ -292,7 +292,7 @@ func TestSelectQueryReuse(t *testing.T) {
 //更新操作，可选更新条数
 func TestUpdate(t *testing.T) {
 	O := Model{"goods"}
-	af := O.Where("name", "可口可乐").Update(map[string]interface{}{"name":"可可口口","price":123})
+	af := O.Where("name", "可口可乐").Update(map[string]any{"name":"可可口口","price":123})
 	if af > 0 {
 		t.Log(af)
 	} else {

@@ -13,10 +13,10 @@ type Parser struct{
 	tokens []string
 }
 
-func (p *Parser) Parse(condition string) map[string]interface{} {
+func (p *Parser) Parse(condition string) map[string]any {
 	value, ok := filter.Load(condition);
     if ok {
-       	return value.(map[string]interface{})
+       	return value.(map[string]any)
     }
 
 	tokens  := tokenizer.Tokenize(condition)
@@ -36,14 +36,14 @@ func (p *Parser) Parse(condition string) map[string]interface{} {
     return tree
 }
 
-func (p *Parser) _tree() map[string]interface{} {
+func (p *Parser) _tree() map[string]any {
 	state   := 0
 	logical := "$and"
 	key     := ""
 	opr     := ""
-	conds   := []map[string]interface{}{}
+	conds   := []map[string]any{}
 
-	var value interface{}
+	var value any
 
 	for ; p.index < p.length; p.index++ {
 		token := p.tokens[p.index]
@@ -53,7 +53,7 @@ func (p *Parser) _tree() map[string]interface{} {
 					case "(":
 							p.index++
 							child := p._tree()
-							conds = append(conds, map[string]interface{}{child["logical"].(string): child["conds"].([]map[string]interface{})})
+							conds = append(conds, map[string]any{child["logical"].(string): child["conds"].([]map[string]any)})
 							state = 2
 					default:
 							key = token
@@ -122,11 +122,11 @@ func (p *Parser) _tree() map[string]interface{} {
 						placeholder = -1
 					}
 
-					conds = append(conds, map[string]interface{}{key: map[string]interface{}{"opr":opr, "value":value, "placeholder":placeholder}})
+					conds = append(conds, map[string]any{key: map[string]any{"opr":opr, "value":value, "placeholder":placeholder}})
 			case 3:
 					switch strings.ToLower(token) {
 						case ")":
-								return map[string]interface{}{"logical": logical, "conds": conds}
+								return map[string]any{"logical": logical, "conds": conds}
 						case "and":
 								logical = "$and"
 								state = -1
@@ -143,5 +143,5 @@ func (p *Parser) _tree() map[string]interface{} {
 		state++
 	}
 
-	return map[string]interface{}{logical: conds}
+	return map[string]any{logical: conds}
 }

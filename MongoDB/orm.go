@@ -13,15 +13,15 @@ import "go.mongodb.org/mongo-driver/bson"
 type Orm struct {
 	coll *mongo.Collection
 
-	selectFields map[string]interface{}
+	selectFields map[string]any
 	selectConds []string
-	selectParams []interface{}
+	selectParams []any
 	selectPage int64
 	selectLimit int64
 	selectOrder bson.D
-	selectGroupId map[string]interface{}
-	selectGroup map[string]interface{}
-	selectHaving map[string]interface{}
+	selectGroupId map[string]any
+	selectGroup map[string]any
+	selectHaving map[string]any
 
 	debug string
 }
@@ -30,18 +30,18 @@ func (O *Orm) Init(dbtag string, table string) *Orm {
 	dbname        := Dbname(dbtag)
 	O.coll         = Open(dbtag).Database(dbname).Collection(table)
 	O.debug        = os.Getenv("debug")
-	O.selectFields = map[string]interface{}{}
+	O.selectFields = map[string]any{}
 	O.selectOrder  = bson.D{}
-	O.selectGroupId= map[string]interface{}{}
-	O.selectGroup  = map[string]interface{}{}
-	O.selectHaving = map[string]interface{}{}
+	O.selectGroupId= map[string]any{}
+	O.selectGroup  = map[string]any{}
+	O.selectHaving = map[string]any{}
 	O.selectPage   = 1
 	O.selectLimit  = 20
 
 	return O
 }
 
-func (O *Orm) Insert(data map[string]interface{}) string {
+func (O *Orm) Insert(data map[string]any) string {
 	res, err := O.coll.InsertOne(context.TODO(), data)
 	if err != nil {
 		panic(err)
@@ -60,9 +60,9 @@ func (O *Orm) Delete() int64 {
 	return result.DeletedCount
 }
 
-func (O *Orm) Update(data map[string]interface{}) int64 {
+func (O *Orm) Update(data map[string]any) int64 {
 	filter := O.filter()
-	update := map[string]interface{}{"$set":data}
+	update := map[string]any{"$set":data}
 	result, err := O.coll.UpdateMany(context.TODO(), filter, update)
 	if err != nil {
 		panic(err)
@@ -100,11 +100,11 @@ func (O *Orm) Field(fields string) *Orm {
 			}
 
 			switch aggs {
-				case "count" : O.selectGroup[alias] = map[string]interface{}{"$sum": 1}
+				case "count" : O.selectGroup[alias] = map[string]any{"$sum": 1}
 				case "sum"   : fallthrough
 				case "avg"   : fallthrough
 				case "max"   : fallthrough
-				case "min"   : O.selectGroup[alias] = map[string]interface{}{"$"+aggs: "$"+aggs_field}
+				case "min"   : O.selectGroup[alias] = map[string]any{"$"+aggs: "$"+aggs_field}
 				case "date_format":
 								split_idx := strings.Index(aggs_field, "^")
 								if split_idx==-1 {
@@ -113,7 +113,7 @@ func (O *Orm) Field(fields string) *Orm {
 								aggs_param := strings.Trim(aggs_field[split_idx+1:],"'")
 								aggs_field  = aggs_field[0:split_idx]
 
-								O.selectGroupId[alias] = map[string]interface{}{"$dateToString": map[string]interface{}{ "format": aggs_param, "date": "$"+aggs_field}}
+								O.selectGroupId[alias] = map[string]any{"$dateToString": map[string]any{ "format": aggs_param, "date": "$"+aggs_field}}
 
 				default      : panic("不支持的方法："+aggs)
 			}
@@ -129,7 +129,7 @@ func (O *Orm) Field(fields string) *Orm {
 	return O
 }
 
-func (O *Orm) Where(conds ...interface{}) *Orm {
+func (O *Orm) Where(conds ...any) *Orm {
 	args_len := len(conds)
 	if args_len < 1 {
 		panic("查询参数不应为空")
@@ -137,12 +137,12 @@ func (O *Orm) Where(conds ...interface{}) *Orm {
 
 	field, ok := conds[0].(string)
 	if !ok {
-			maps, ok := conds[0].(map[string]interface{})
+			maps, ok := conds[0].(map[string]any)
 			if ok {
 				for _field,_criteria := range maps {
-						_set, ok := _criteria.([]interface{})
+						_set, ok := _criteria.([]any)
 						if ok {
-							_tmp := []interface{}{_field}
+							_tmp := []any{_field}
 							_tmp  = append(_tmp, _set...)
 							O.Where(_tmp...)
 							continue
@@ -313,7 +313,7 @@ func (O *Orm) Having(field string, opr string, criteria int) *Orm {
 		default   : panic("having操作符仅支持=、>、>=、<、<=")
 	}
 
-	O.selectHaving[field] = map[string]interface{}{_opr:criteria}
+	O.selectHaving[field] = map[string]any{_opr:criteria}
 
 	return O
 }
@@ -360,31 +360,31 @@ func (O *Orm) Limit(limit int64) *Orm {
 	return O
 }
 
-func (O *Orm) Select() []map[string]interface{} {
+func (O *Orm) Select() []map[string]any {
 	filter := O.filter()
-	result := []map[string]interface{}{}
+	result := []map[string]any{}
 
 	var cursor *mongo.Cursor
 
 	//聚合查询
 	if len(O.selectGroup)>0 {
-		aggs := []map[string]interface{}{}
+		aggs := []map[string]any{}
 
-		aggs = append(aggs, map[string]interface{}{"$match": filter})
+		aggs = append(aggs, map[string]any{"$match": filter})
 
 		O.selectGroup["_id"] = O.selectGroupId
-		aggs = append(aggs, map[string]interface{}{"$group":O.selectGroup})
+		aggs = append(aggs, map[string]any{"$group":O.selectGroup})
 
 		if len(O.selectOrder)>0 {
-			aggs = append(aggs, map[string]interface{}{"$sort":O.selectOrder})
+			aggs = append(aggs, map[string]any{"$sort":O.selectOrder})
 		}
 
 		if len(O.selectHaving)>0 {
-			aggs = append(aggs, map[string]interface{}{"$match":O.selectHaving})
+			aggs = append(aggs, map[string]any{"$match":O.selectHaving})
 		}
 
-		aggs = append(aggs, map[string]interface{}{"$skip": int64(O.selectLimit * (O.selectPage - 1))})
-		aggs = append(aggs, map[string]interface{}{"$limit": O.selectLimit})
+		aggs = append(aggs, map[string]any{"$skip": int64(O.selectLimit * (O.selectPage - 1))})
+		aggs = append(aggs, map[string]any{"$limit": O.selectLimit})
 
 		if O.debug=="yes" {
 			log.Println(aggs)
@@ -420,7 +420,7 @@ func (O *Orm) Select() []map[string]interface{} {
 	}
 
 	//遍历取出结果
-	var list []map[string]interface{}
+	var list []map[string]any
 	if err := cursor.All(context.TODO(), &list); err != nil {
 		panic(err)
 	}
@@ -429,7 +429,7 @@ func (O *Orm) Select() []map[string]interface{} {
 		for _, v := range list {
 			cursor.Decode(&v)
 
-			for id_k, id_v := range v["_id"].(map[string]interface{}) {
+			for id_k, id_v := range v["_id"].(map[string]any) {
 				v[id_k] = id_v
 			}
 
@@ -450,7 +450,7 @@ func (O *Orm) Select() []map[string]interface{} {
 	return result
 }
 
-func (O *Orm) Find() map[string]interface{} {
+func (O *Orm) Find() map[string]any {
 	if len(O.selectGroup)>0 {
 		panic("聚合查询不支持此操作")
 	}
@@ -467,7 +467,7 @@ func (O *Orm) Find() map[string]interface{} {
 		findOptions.SetProjection(O.selectFields)
 	}
 
-	var result map[string]interface{}
+	var result map[string]any
 	err := O.coll.FindOne(context.TODO(), filter, findOptions).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -482,8 +482,8 @@ func (O *Orm) Find() map[string]interface{} {
 	return result
 }
 
-func (O *Orm) Value(field string) interface{} {
-	O.selectFields = map[string]interface{}{field:1}
+func (O *Orm) Value(field string) any {
+	O.selectFields = map[string]any{field:1}
 
 	doc := O.Find()
 
@@ -495,16 +495,16 @@ func (O *Orm) Value(field string) interface{} {
 	return nil
 }
 
-func (O *Orm) Values(field string) []interface{} {
+func (O *Orm) Values(field string) []any {
 	if len(O.selectGroup)>0 {
 		panic("聚合查询不支持此操作")
 	}
 
-	O.selectFields = map[string]interface{}{field:1}
+	O.selectFields = map[string]any{field:1}
 
 	list := O.Select()
 
-	result := []interface{}{}
+	result := []any{}
 
 	for _, v := range list {
 		value, ok := v[field]
@@ -516,7 +516,7 @@ func (O *Orm) Values(field string) []interface{} {
 	return result
 }
 
-func (O *Orm) Columns(fields ...string) map[string]interface{} {
+func (O *Orm) Columns(fields ...string) map[string]any {
 	if len(O.selectGroup)>0 {
 		panic("聚合查询不支持此操作")
 	}
@@ -531,18 +531,18 @@ func (O *Orm) Columns(fields ...string) map[string]interface{} {
 		key   = "_id"
 		value = fields[0]
 
-		O.selectFields = map[string]interface{}{value:1}
+		O.selectFields = map[string]any{value:1}
 
 	} else {
 		key   = fields[1]
 		value = fields[0]
 
-		O.selectFields = map[string]interface{}{value:1,key:1}
+		O.selectFields = map[string]any{value:1,key:1}
 	}
 
 	list := O.Select()
 
-	var result = map[string]interface{}{}
+	var result = map[string]any{}
 	if len(list)>0 {
 		for _, v := range list {
 			result[v[key].(string)] = v[value]
@@ -558,13 +558,13 @@ func (O *Orm) Sum(field string) int32 {
 	}
 
     filter    := O.filter()
-    cursor, _ := O.coll.Aggregate(context.Background(), []map[string]interface{}{
+    cursor, _ := O.coll.Aggregate(context.Background(), []map[string]any{
         {"$match": filter},
-        {"$group": map[string]interface{}{"_id": nil, "sum": map[string]interface{}{"$sum": "$"+field}}},
+        {"$group": map[string]any{"_id": nil, "sum": map[string]any{"$sum": "$"+field}}},
     })
 
     if cursor.Next(context.TODO()) {
-    	var result map[string]interface{}
+    	var result map[string]any
 		cursor.Decode(&result)
 		return result["sum"].(int32)
     }
@@ -576,18 +576,18 @@ func (O *Orm) Count() int32 {
 	filter := O.filter()
 
 	if len(O.selectGroupId)>0 {
-		aggs := []map[string]interface{}{}
+		aggs := []map[string]any{}
 
-		aggs = append(aggs, map[string]interface{}{"$match": filter})
+		aggs = append(aggs, map[string]any{"$match": filter})
 
 		O.selectGroup["_id"] = O.selectGroupId
-		aggs = append(aggs, map[string]interface{}{"$group":O.selectGroup})
+		aggs = append(aggs, map[string]any{"$group":O.selectGroup})
 
 		if len(O.selectHaving)>0 {
-			aggs = append(aggs, map[string]interface{}{"$match":O.selectHaving})
+			aggs = append(aggs, map[string]any{"$match":O.selectHaving})
 		}
 
-		aggs = append(aggs, map[string]interface{}{"$count":"total"})
+		aggs = append(aggs, map[string]any{"$count":"total"})
 
 		if O.debug=="yes" {
 			log.Println(aggs)
@@ -601,7 +601,7 @@ func (O *Orm) Count() int32 {
 		}
 
 		if cursor.Next(context.TODO()) {
-    		var result map[string]interface{}
+    		var result map[string]any
 			cursor.Decode(&result)
 			return result["total"].(int32)
     	}
@@ -623,10 +623,10 @@ func (O *Orm) Exist(id string) bool {
 		panic("聚合查询不支持此操作")
 	}
 
-	var result map[string]interface{}
+	var result map[string]any
 
 	_id, _ := primitive.ObjectIDFromHex(id)
-	filter := map[string]interface{}{"_id":_id}
+	filter := map[string]any{"_id":_id}
 	err    := O.coll.FindOne(context.TODO(), filter).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -639,10 +639,10 @@ func (O *Orm) Exist(id string) bool {
 	return true
 }
 
-func (O *Orm) filter() map[string]interface{} {
+func (O *Orm) filter() map[string]any {
 	sql := strings.Join(O.selectConds, " AND ")
 
-	var filter map[string]interface{}
+	var filter map[string]any
 	if len(sql)>0 {
 		scheme := (&Parser{}).Parse(sql)
 		if O.debug=="yes" {
@@ -654,37 +654,37 @@ func (O *Orm) filter() map[string]interface{} {
 			log.Println(filter)
 		}
 	} else {
-		filter = map[string]interface{}{}
+		filter = map[string]any{}
 	}
 
 	return filter
 }
 
-func (O *Orm) bind(filter map[string]interface{}) map[string]interface{} {
+func (O *Orm) bind(filter map[string]any) map[string]any {
 	for k,v := range filter {
 		switch k {
 			case "$and": fallthrough
 			case "$or":
-						var cond []map[string]interface{} = []map[string]interface{}{}
+						var cond []map[string]any = []map[string]any{}
 
-						for _,e := range v.([]map[string]interface{}) {
+						for _,e := range v.([]map[string]any) {
 							cond = append(cond, O.bind(e))
 						}
 
-						return map[string]interface{}{k:cond}
+						return map[string]any{k:cond}
 			default:
-					set := v.(map[string]interface{})
+					set := v.(map[string]any)
 					value := set["value"]
 					opr   := set["opr"].(string)
 					idx   := set["placeholder"].(int)
 					if value=="?" {
 						param := O.selectParams[idx]
-						return map[string]interface{}{
-							k:map[string]interface{}{opr:param},
+						return map[string]any{
+							k:map[string]any{opr:param},
 						}
 					} else {
-						return map[string]interface{}{
-							k:map[string]interface{}{opr:value},
+						return map[string]any{
+							k:map[string]any{opr:value},
 						}
 					}
 		}
