@@ -425,9 +425,26 @@ func (O *Orm) Select() []map[string]interface{} {
 		panic(err)
 	}
 
-	for _, v := range list {
-		cursor.Decode(&v)
-		result = append(result, v)
+	if len(O.selectGroup)>0 {
+		for _, v := range list {
+			cursor.Decode(&v)
+
+			for id_k, id_v := range v["_id"].(map[string]interface{}) {
+				v[id_k] = id_v
+			}
+
+			delete(v, "_id")
+
+			result = append(result, v)
+		}
+	} else {
+		for _, v := range list {
+			cursor.Decode(&v)
+
+			v["_id"] = v["_id"].(primitive.ObjectID).Hex()
+
+			result = append(result, v)
+		}
 	}
 
 	return result
@@ -459,6 +476,8 @@ func (O *Orm) Find() map[string]interface{} {
 			panic(err)
 		}
 	}
+
+	result["_id"] = result["_id"].(primitive.ObjectID).Hex()
 
 	return result
 }
