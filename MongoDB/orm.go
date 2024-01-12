@@ -678,6 +678,15 @@ func (O *Orm) bind(filter map[string]any) map[string]any {
 					opr   := set["opr"].(string)
 					idx   := set["placeholder"].(int)
 					if value=="?" {
+						if opr=="$regex" {
+							param:= O.selectParams[idx].(string)
+							param = strings.Replace(param, "%", ".*", -1)
+							param = strings.Replace(param, "_", ".", -1)
+							return map[string]any{
+								k:map[string]any{"$regex":"^"+param+"$", "$options":"ism"},
+							}
+						}
+
 						param := O.selectParams[idx]
 						return map[string]any{
 							k:map[string]any{opr:param},
