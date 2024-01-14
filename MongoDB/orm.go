@@ -205,7 +205,11 @@ func (O *Orm) Where(conds ...any) *Orm {
 										case float32,float64: 
 										case time.Time:
 										case string   :
-														conds[2] = Datetime(conds[2].(string))
+														_time := datetime(conds[2].(string))
+														if _time==nil {
+															panic(field+"参数应为数值或时间类型")
+														}
+														conds[2] = _time
 										default : panic(field+"参数应为数值或时间类型")
 									}
 
@@ -274,11 +278,8 @@ func (O *Orm) Where(conds ...any) *Orm {
 
 									O.selectConds  = append(O.selectConds, field+" >= ? AND "+field+" <= ? ")
 									for _,v := range criteria {
-										if len(v)<26 && v[16]==58 && v[7]==45 && v[13]==58 && v[4]==45  {
-											_time, err := time.Parse("2006-01-02 15:04:05", v[0:10]+" "+v[11:19])
-											if err!=nil {
-												panic("时间格式错误，转换失败："+err.Error())
-											}
+										_time := datetime(v)
+										if _time!=nil {
 											O.selectParams = append(O.selectParams, _time)
 										} else {
 											O.selectParams = append(O.selectParams, v)
@@ -737,12 +738,9 @@ func detect(doc map[string]any) map[string]any {
 	for k, v := range doc {
 		switch v.(type) {
 			case string:
-						s, _ := v.(string)
-						if len(s)>18 && len(s)<26 && s[16]==58 && s[7]==45 && s[13]==58 && s[4]==45  {
-							_time, err := time.Parse("2006-01-02 15:04:05", s[0:10]+" "+s[11:19])
-							if err!=nil {
-								panic("时间格式错误，转换失败："+err.Error())
-							}
+						s, _  := v.(string)
+						_time := datetime(s)
+						if _time!=nil {
 							doc[k] = _time
 						}
 		}
@@ -750,3 +748,15 @@ func detect(doc map[string]any) map[string]any {
 
 	return doc
 }
+
+func datetime(t string) any {
+	if len(t)>18 && len(t)<26 && t[16]==58 && t[7]==45 && t[13]==58 && t[4]==45  {
+		_time, err := time.Parse("2006-01-02 15:04:05", t[0:10]+" "+t[11:19])
+		if err==nil {
+			return _time
+		}
+	}
+
+	return nil
+}
+
