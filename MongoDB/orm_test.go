@@ -9,8 +9,6 @@ func init() {
 	Register("mongodb", "test", "mongodb://localhost:27017")
 }
 
-var id string
-
 //插入
 func TestInsert(t *testing.T) {
 	O := Model{"goods"}
@@ -23,12 +21,13 @@ func TestInsert(t *testing.T) {
 	O.Insert(map[string]any{"name":"和其正","price":700,"detail":"...","category":"饮料"})
 	O.Insert(map[string]any{"name":"领带","price":800,"detail":"...","category":"服装"})
 	O.Insert(map[string]any{"name":"美年达","price":900,"category":"饮料"})
-	id = O.Insert(map[string]any{"name":"呢子大衣","price":200,"detail":"...","category":"服装"})
+	O.Insert(map[string]any{"name":"呢子大衣","price":200,"detail":"...","category":"服装"})
 }
 
 //主键条件查询
 func TestSelectPrimary(t *testing.T) {
-	O := Model{"goods"}
+	O   := Model{"goods"}
+	id  := O.Insert(map[string]any{"name":"主键查询","price":200,"detail":"...","category":"服装"})
 	row := O.Where(id).Find()
 	_, ok := row["name"]
 	if ok {
@@ -158,7 +157,7 @@ func TestSelectExp(t *testing.T) {
 //like条件搜索查询
 func TestSelectLike(t *testing.T) {
 	O := Model{"goods"}
-	row := O.Where("name", "like", "帽").Find()
+	row := O.Where("name", "like", "%帽").Find()
 	if len(row)>1 {
 		t.Log(row)
 	} else {
@@ -303,8 +302,8 @@ func TestUpdate(t *testing.T) {
 //删除操作，可选删除条数
 func TestDelete(t *testing.T) {
 	O := Model{"goods"}
-	id := O.Insert(map[string]any{"name":"测试删除","price":200,"detail":"...","category":"服装"})
-	af := O.Where(id).Delete()
+	id := O.Field("_id").Find()
+	af := O.Where(id["_id"]).Delete()
 	if af > 0 {
 		t.Log(af)
 	} else {
