@@ -303,7 +303,8 @@ func TestUpdate(t *testing.T) {
 //删除操作，可选删除条数
 func TestDelete(t *testing.T) {
 	O := Model{"goods"}
-	af := O.Where("name", "雪碧").Delete()
+	id := O.Insert(map[string]any{"name":"测试删除","price":200,"detail":"...","category":"服装"})
+	af := O.Where(id).Delete()
 	if af > 0 {
 		t.Log(af)
 	} else {
