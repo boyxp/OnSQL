@@ -2,6 +2,7 @@ package MongoDB
 
 import "os"
 import "log"
+import "time"
 import "context"
 import "strings"
 import "strconv"
@@ -198,7 +199,10 @@ func (O *Orm) Where(conds ...any) *Orm {
 										case int, int8, int16, int32, int64  :
 										case uint, uint8,uint16,uint32,uint64:
 										case float32,float64: 
-										default : panic(field+"参数应为数值类型")
+										case time.Time:
+										case string:
+												conds[2] = Datetime(conds[2].(string))
+										default : panic(field+"参数应为数值或time.Time类型")
 									}
 
 									O.selectConds  = append(O.selectConds, field+" "+opr+" ?")
