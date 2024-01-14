@@ -114,6 +114,8 @@ func (O *Orm) Field(fields string) *Orm {
 									panic("date_format必须有参数")
 								}
 								aggs_param := strings.Trim(aggs_field[split_idx+1:],"'")
+								aggs_param  = strings.Replace(aggs_param, "%i", "%M", -1)
+								aggs_param  = strings.Replace(aggs_param, "%s", "%S", -1)
 								aggs_field  = aggs_field[0:split_idx]
 
 								O.selectGroupId[alias] = map[string]any{"$dateToString": map[string]any{ "format": aggs_param, "date": "$"+aggs_field}}
