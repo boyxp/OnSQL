@@ -447,13 +447,15 @@ func (O *Orm) Select() []map[string]any {
 
 			delete(v, "_id")
 
+			v = convert(v)
+
 			result = append(result, v)
 		}
 	} else {
 		for _, v := range list {
 			cursor.Decode(&v)
 
-			v["_id"] = v["_id"].(primitive.ObjectID).Hex()
+			v = convert(v)
 
 			result = append(result, v)
 		}
@@ -489,7 +491,7 @@ func (O *Orm) Find() map[string]any {
 		}
 	}
 
-	result["_id"] = result["_id"].(primitive.ObjectID).Hex()
+	result = convert(result)
 
 	return result
 }
@@ -712,5 +714,18 @@ func (O *Orm) bind(filter map[string]any) map[string]any {
 	}
 
 	return nil
+}
+
+func convert(doc map[string]any) map[string]any {
+	for k, v := range doc {
+		switch v.(type) {
+			case primitive.DateTime:
+									doc[k] = v.(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
+			case primitive.ObjectID:
+									doc[k] = v.(primitive.ObjectID).Hex()
+		}
+	}
+
+	return doc
 }
 
