@@ -43,6 +43,7 @@ func (O *Orm) Init(dbtag string, table string) *Orm {
 }
 
 func (O *Orm) Insert(data map[string]any) string {
+	data = detect(data)
 	res, err := O.coll.InsertOne(context.TODO(), data)
 	if err != nil {
 		panic(err)
@@ -62,6 +63,7 @@ func (O *Orm) Delete() int64 {
 }
 
 func (O *Orm) Update(data map[string]any) int64 {
+	data    = detect(data)
 	filter := O.filter()
 	update := map[string]any{"$set":data}
 	result, err := O.coll.UpdateMany(context.TODO(), filter, update)
@@ -447,7 +449,7 @@ func (O *Orm) Select() []map[string]any {
 
 			delete(v, "_id")
 
-			v = convert(v)
+			v = format(v)
 
 			result = append(result, v)
 		}
@@ -455,7 +457,7 @@ func (O *Orm) Select() []map[string]any {
 		for _, v := range list {
 			cursor.Decode(&v)
 
-			v = convert(v)
+			v = format(v)
 
 			result = append(result, v)
 		}
@@ -491,7 +493,7 @@ func (O *Orm) Find() map[string]any {
 		}
 	}
 
-	result = convert(result)
+	result = format(result)
 
 	return result
 }
@@ -716,7 +718,7 @@ func (O *Orm) bind(filter map[string]any) map[string]any {
 	return nil
 }
 
-func convert(doc map[string]any) map[string]any {
+func format(doc map[string]any) map[string]any {
 	for k, v := range doc {
 		switch v.(type) {
 			case primitive.DateTime:
@@ -729,3 +731,20 @@ func convert(doc map[string]any) map[string]any {
 	return doc
 }
 
+func detect(doc map[string]any) map[string]any {
+	for k, v := range doc {
+		switch v.(type) {
+			case string:
+						s, _ := v.(string)
+						if len(s)>18 && len(s)<26 && s[16]==58 && s[7]==45 && s[13]==58 && s[4]==45  {
+							_time, err := time.Parse("2006-01-02 15:04:05", s[0:10]+" "+s[11:19])
+							if err!=nil {
+								panic("时间格式错误，转换失败："+err.Error())
+							}
+							doc[k] = _time
+						}
+		}
+	}
+
+	return doc
+}
