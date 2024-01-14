@@ -3,6 +3,7 @@ package MongoDB
 import "os"
 import "log"
 import "sync"
+import "time"
 import "context"
 import "go.mongodb.org/mongo-driver/mongo"
 import "go.mongodb.org/mongo-driver/mongo/options"
@@ -68,4 +69,16 @@ func Close(client *mongo.Client) bool {
 	}
 
 	return true
+}
+
+func Datetime(t ...string) time.Time {
+	if len(t)>0 && len(t[0])<26 && t[0][16]==58 && t[0][7]==45 && t[0][13]==58 && t[0][4]==45  {
+		_time, err := time.Parse("2006-01-02 15:04:05", t[0][0:10]+" "+t[0][11:19])
+		if err!=nil {
+			panic("时间格式错误，转换失败："+err.Error())
+		}
+		return _time
+	}
+
+	return time.Now().UTC()
 }
