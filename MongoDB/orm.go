@@ -200,9 +200,9 @@ func (O *Orm) Where(conds ...any) *Orm {
 										case uint, uint8,uint16,uint32,uint64:
 										case float32,float64: 
 										case time.Time:
-										case string:
-												conds[2] = Datetime(conds[2].(string))
-										default : panic(field+"参数应为数值或time.Time类型")
+										case string   :
+														conds[2] = Datetime(conds[2].(string))
+										default : panic(field+"参数应为数值或时间类型")
 									}
 
 									O.selectConds  = append(O.selectConds, field+" "+opr+" ?")
@@ -270,7 +270,15 @@ func (O *Orm) Where(conds ...any) *Orm {
 
 									O.selectConds  = append(O.selectConds, field+" >= ? AND "+field+" <= ? ")
 									for _,v := range criteria {
-										O.selectParams = append(O.selectParams, v)
+										if len(v)<26 && v[16]==58 && v[7]==45 && v[13]==58 && v[4]==45  {
+											_time, err := time.Parse("2006-01-02 15:04:05", v[0:10]+" "+v[11:19])
+											if err!=nil {
+												panic("时间格式错误，转换失败："+err.Error())
+											}
+											O.selectParams = append(O.selectParams, _time)
+										} else {
+											O.selectParams = append(O.selectParams, v)
+										}
 									}
 
 					default        :
