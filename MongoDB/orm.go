@@ -778,6 +778,11 @@ func datetime(t string) any {
 		if err==nil {
 			return _time
 		}
+	} else if(len(t)==10 && t[4]==45 && t[7]==45) {
+		_time, err := time.Parse("2006-01-02 15:04:05", t+" 00:00:00")
+		if err==nil {
+			return _time
+		}
 	}
 
 	return nil
