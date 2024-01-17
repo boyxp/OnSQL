@@ -1,6 +1,9 @@
 # OnSQL
 用SQL查询MongoDB
 
+![](https://img.shields.io/npm/l/vue.svg)
+![example workflow](https://github.com/boyxp/OnSQL/actions/workflows/go.yml/badge.svg)
+
 ## 快速上手
 ```
 package main
