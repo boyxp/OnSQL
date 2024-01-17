@@ -12,16 +12,16 @@ func init() {
 //插入
 func TestInsert(t *testing.T) {
 	O := Model{"goods"}
-	O.Insert(map[string]any{"name":"可口可乐","price":100,"detail":"...","category":"饮料"})
-	O.Insert(map[string]any{"name":"小红帽","price":200,"detail":"...","category":"服装"})
-	O.Insert(map[string]any{"name":"雪碧","price":300,"category":"饮料"})
-	O.Insert(map[string]any{"name":"高跟鞋","price":400,"detail":"...","category":"服装"})
-	O.Insert(map[string]any{"name":"芬达","price":500,"detail":"...","category":"饮料"})
-	O.Insert(map[string]any{"name":"海魂衫","price":600,"category":"服装"})
-	O.Insert(map[string]any{"name":"和其正","price":700,"detail":"...","category":"饮料"})
-	O.Insert(map[string]any{"name":"领带","price":800,"detail":"...","category":"服装"})
-	O.Insert(map[string]any{"name":"美年达","price":900,"category":"饮料"})
-	O.Insert(map[string]any{"name":"呢子大衣","price":200,"detail":"...","category":"服装"})
+	O.Insert(map[string]any{"name":"可口可乐","price":100,"detail":"...","category":"饮料","create_time":"2024-01-01 01:01:01"})
+	O.Insert(map[string]any{"name":"小红帽","price":200,"detail":"...","category":"服装","create_time":"2024-01-03 01:01:01"})
+	O.Insert(map[string]any{"name":"雪碧","price":300,"category":"饮料","create_time":"2024-01-05 01:01:01"})
+	O.Insert(map[string]any{"name":"高跟鞋","price":400,"detail":"...","category":"服装","create_time":"2024-01-10 01:01:01"})
+	O.Insert(map[string]any{"name":"芬达","price":500,"detail":"...","category":"饮料","create_time":"2024-01-12 01:01:01"})
+	O.Insert(map[string]any{"name":"海魂衫","price":600,"category":"服装","create_time":"2024-01-13 01:01:01"})
+	O.Insert(map[string]any{"name":"和其正","price":700,"detail":"...","category":"饮料","create_time":"2024-01-14 01:01:01"})
+	O.Insert(map[string]any{"name":"领带","price":800,"detail":"...","category":"服装","create_time":"2024-01-15 01:01:01"})
+	O.Insert(map[string]any{"name":"美年达","price":900,"category":"饮料","create_time":"2024-01-16 01:01:01"})
+	O.Insert(map[string]any{"name":"呢子大衣","price":200,"detail":"...","category":"服装","create_time":"2024-01-17 01:01:01"})
 }
 
 //主键条件查询
@@ -135,7 +135,7 @@ func TestSelectNotNull(t *testing.T) {
 //between区间条件查询
 func TestSelectBetween(t *testing.T) {
 	O := Model{"goods"}
-	rows := O.Where("price", "BETWEEN", []string{"300","800"}).Select()
+	rows := O.Where("create_time", "BETWEEN", []string{"2024-01-01 01:01:01","2024-01-03 01:01:01"}).Select()
 	if len(rows)>1 {
 		t.Log(rows)
 	} else {
