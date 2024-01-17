@@ -186,7 +186,12 @@ func (O *Orm) Where(conds ...any) *Orm {
 				O.selectParams = append(O.selectParams, _id)
 		case 2 :
 				O.selectConds  = append(O.selectConds, field+"=?")
-				O.selectParams = append(O.selectParams, conds[1])
+				if field=="_id" {
+					_id, _ := primitive.ObjectIDFromHex(conds[1].(string))
+					O.selectParams = append(O.selectParams, _id)
+				} else {
+					O.selectParams = append(O.selectParams, conds[1])
+				}
 		case 3 :
 				opr, ok := conds[1].(string)
 				if !ok {
@@ -227,7 +232,16 @@ func (O *Orm) Where(conds ...any) *Orm {
 									}
 
 									O.selectConds  = append(O.selectConds, field+" "+opr+" ?")
-									O.selectParams = append(O.selectParams, conds[2])
+									if field=="_id" {
+										_v, ok := conds[2].(string)
+										if !ok {
+											panic("_id查询参数必须为string类型")
+										}
+										_id, _ := primitive.ObjectIDFromHex(_v)
+										O.selectParams = append(O.selectParams, _id)
+									} else {
+										O.selectParams = append(O.selectParams, conds[2])
+									}
 
 					case "LIKE"   :
 									criteria, ok := conds[2].(string)
@@ -250,7 +264,16 @@ func (O *Orm) Where(conds ...any) *Orm {
 									}
 
 									O.selectConds  = append(O.selectConds, field+" "+opr+" ?")
-									O.selectParams = append(O.selectParams, criteria)
+									if field=="_id" {
+										ids := []any{}
+										for _,v := range criteria {
+											_id, _ := primitive.ObjectIDFromHex(v)
+											ids = append(ids, _id)
+										}
+										O.selectParams = append(O.selectParams, ids)
+									} else {
+										O.selectParams = append(O.selectParams, criteria)
+									}
 
 					case "IS"     : fallthrough
 					case "IS NOT" :
