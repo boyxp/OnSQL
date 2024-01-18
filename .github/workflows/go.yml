@@ -6,6 +6,8 @@ name: Test
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'MongoDB/**.go'
 
 jobs:
 
