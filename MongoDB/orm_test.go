@@ -28,10 +28,23 @@ func TestInsert(t *testing.T) {
 func TestSelectPrimary(t *testing.T) {
 	O   := Model{"goods"}
 	id  := O.Insert(map[string]any{"name":"主键查询","price":200,"detail":"...","category":"服装"})
-	row := O.Where(id).Find()
-	_, ok := row["name"]
-	if ok {
-		t.Log(row)
+	row1 := O.Where(id).Find()
+	if row1!=nil {
+		t.Log(row1)
+	} else {
+		t.Fail()
+	}
+
+	row2 := O.Where("_id", id).Find()
+	if row2!=nil {
+		t.Log(row2)
+	} else {
+		t.Fail()
+	}
+
+	row3 := O.Where("_id", "in", []string{id}).Find()
+	if row3!=nil {
+		t.Log(row3)
 	} else {
 		t.Fail()
 	}
