@@ -5,7 +5,7 @@
 ![example workflow](https://github.com/boyxp/OnSQL/actions/workflows/go.yml/badge.svg)
 
 ## 快速上手
-```
+```golang
 package main
 
 import "fmt"
