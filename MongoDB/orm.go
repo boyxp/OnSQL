@@ -324,8 +324,7 @@ func (O *Orm) Group(fields ...string) *Orm {
 	}
 
 	for _, field := range fields {
-		_, ok := O.selectGroupId[field]
-		if !ok {
+		if _, ok := O.selectGroupId[field];!ok {
 			O.selectGroupId[field] = "$"+field
 		}
 	}
@@ -338,8 +337,7 @@ func (O *Orm) Having(field string, opr string, criteria int) *Orm {
 		panic("非聚合查询不支持此操作")
 	}
 
-	_, ok := O.selectGroup[field]
-	if !ok {
+	if _, ok := O.selectGroup[field];!ok {
 		panic(field+"：having条件字段必须是聚合别名")
 	}
 
@@ -365,8 +363,7 @@ func (O *Orm) Order(field string, sort string) *Orm {
 	}
 
 	if len(O.selectGroup)>0 {
-		_, ok := O.selectGroup[field]
-		if !ok {
+		if _, ok := O.selectGroup[field];!ok {
 			panic("聚合查询排序只能是聚合字段")
 		}
 	}
@@ -529,8 +526,7 @@ func (O *Orm) Value(field string) any {
 
 	doc := O.Find()
 
-	value, ok := doc[field]
-	if ok {
+	if value, ok := doc[field];ok {
 		return value
 	}
 
@@ -549,8 +545,7 @@ func (O *Orm) Values(field string) []any {
 	result := []any{}
 
 	for _, v := range list {
-		value, ok := v[field]
-		if ok {
+		if value, ok := v[field];ok {
 			result = append(result, value)
 		}
 	}
@@ -715,7 +710,7 @@ func (O *Orm) bind(filter map[string]any) map[string]any {
 
 						return map[string]any{k:cond}
 			default:
-					set := v.(map[string]any)
+					set   := v.(map[string]any)
 					value := set["value"]
 					opr   := set["opr"].(string)
 					idx   := set["placeholder"].(int)
@@ -774,13 +769,11 @@ func detect(doc map[string]any) map[string]any {
 
 func datetime(t string) any {
 	if len(t)>18 && len(t)<26 && t[16]==58 && t[7]==45 && t[13]==58 && t[4]==45  {
-		_time, err := time.Parse("2006-01-02 15:04:05", t[0:10]+" "+t[11:19])
-		if err==nil {
+		if _time, err := time.Parse("2006-01-02 15:04:05", t[0:10]+" "+t[11:19]);err==nil {
 			return _time
 		}
 	} else if(len(t)==10 && t[4]==45 && t[7]==45) {
-		_time, err := time.Parse("2006-01-02 15:04:05", t+" 00:00:00")
-		if err==nil {
+		if _time, err := time.Parse("2006-01-02 15:04:05", t+" 00:00:00");err==nil {
 			return _time
 		}
 	}

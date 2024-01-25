@@ -14,8 +14,7 @@ type Parser struct{
 }
 
 func (p *Parser) Parse(condition string) map[string]any {
-	value, ok := filter.Load(condition);
-    if ok {
+	if value, ok := filter.Load(condition);ok {
        	return value.(map[string]any)
     }
 
@@ -129,10 +128,10 @@ func (p *Parser) _tree() map[string]any {
 								return map[string]any{"logical": logical, "conds": conds}
 						case "and":
 								logical = "$and"
-								state = -1
+								state   = -1
 						case "or":
 								logical = "$or"
-								state = -1
+								state   = -1
 						default:
 								panic("syntax error")
 					}
