@@ -769,11 +769,11 @@ func detect(doc map[string]any) map[string]any {
 
 func datetime(t string) any {
 	if len(t)>18 && len(t)<26 && t[16]==58 && t[7]==45 && t[13]==58 && t[4]==45  {
-		if _time, err := time.Parse("2006-01-02 15:04:05", t[0:10]+" "+t[11:19]);err==nil {
+		if _time, err := time.ParseInLocation("2006-01-02 15:04:05", t[0:10]+" "+t[11:19],time.Local);err==nil {
 			return _time
 		}
 	} else if(len(t)==10 && t[4]==45 && t[7]==45) {
-		if _time, err := time.Parse("2006-01-02 15:04:05", t+" 00:00:00");err==nil {
+		if _time, err := time.ParseInLocation("2006-01-02 15:04:05", t+" 00:00:00",time.Local);err==nil {
 			return _time
 		}
 	}
