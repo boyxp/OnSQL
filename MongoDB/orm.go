@@ -118,7 +118,7 @@ func (O *Orm) Field(fields string) *Orm {
 								aggs_param  = strings.Replace(aggs_param, "%s", "%S", -1)
 								aggs_field  = aggs_field[0:split_idx]
 
-								O.selectGroupId[alias] = map[string]any{"$dateToString": map[string]any{ "format": aggs_param, "date": "$"+aggs_field}}
+								O.selectGroupId[alias] = map[string]any{"$dateToString": map[string]any{ "format": aggs_param, "date": "$"+aggs_field, "timezone": "+08:00"}}
 
 				default      : panic("不支持的方法："+aggs)
 			}
