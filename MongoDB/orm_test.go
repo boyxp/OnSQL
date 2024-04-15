@@ -192,10 +192,10 @@ func TestSelectOrder(t *testing.T) {
 //group+having查询
 func TestSelectGroup(t *testing.T) {
 	O := Model{"goods"}
-	rows := O.Field("count(*) as num,category,price").
+	rows := O.Field("count(*) as num,category,price,date_format(create_time, '%Y_%m_%d_%H') as d").
 			Where("price", ">", 50).
-			Group("category","price").
-			Having("num",">",1).
+			Where("create_time", "is not", "null").
+			Group("category","price","d").
 			Select()
 
 	if len(rows)>0 {
