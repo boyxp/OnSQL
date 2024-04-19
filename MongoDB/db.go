@@ -7,6 +7,11 @@ import "context"
 import "go.mongodb.org/mongo-driver/mongo"
 import "go.mongodb.org/mongo-driver/mongo/options"
 
+var pool chan *mongo.Client
+func init() {
+	pool = make(chan *mongo.Client, 100)
+}
+
 var cache sync.Map
 
 func Register(tag string, dbname string, dsn string) {
@@ -53,19 +58,24 @@ func NewOrm(table string, tag ...string) *Orm {
 }
 
 func Open(tag string) *mongo.Client {
-	dsn := Dsn(tag)
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dsn).SetMinPoolSize(5).SetMaxPoolSize(100))
-	if err != nil {
-		panic(err)
-	}
+	select {
+			case conn := <-pool:
+					return conn
+			default            :
+					dsn := Dsn(tag)
+					client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dsn).SetMinPoolSize(5).SetMaxPoolSize(100))
+					if err != nil {
+						panic(err)
+					}
 
-	return client
+					return client
+	}
 }
 
-func Close(client *mongo.Client) bool {
-	if err := client.Disconnect(context.TODO()); err != nil {
-		panic(err)
-	}
-
-	return true
+func Close(conn *mongo.Client) {
+	select {
+			case pool <- conn:
+			default          :
+							conn.Disconnect(context.TODO())
+    }
 }
