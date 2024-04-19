@@ -58,17 +58,23 @@ func NewOrm(table string, tag ...string) *Orm {
 }
 
 func Open(tag string) *mongo.Client {
-	select {
-			case conn := <-pool:
-					return conn
-			default            :
-					dsn := Dsn(tag)
-					client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dsn).SetMinPoolSize(5).SetMaxPoolSize(100))
-					if err != nil {
-						panic(err)
+	for {
+		select {
+				case conn := <-pool:
+					err := conn.Ping(context.TODO(), nil)
+					if err == nil {
+						return conn
 					}
 
-					return client
+				default            :
+						dsn := Dsn(tag)
+						client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dsn).SetMinPoolSize(5).SetMaxPoolSize(100))
+						if err != nil {
+							panic(err)
+						}
+
+						return client
+		}
 	}
 }
 
