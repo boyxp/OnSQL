@@ -7,11 +7,6 @@ import "context"
 import "go.mongodb.org/mongo-driver/mongo"
 import "go.mongodb.org/mongo-driver/mongo/options"
 
-var pool chan *mongo.Client
-func init() {
-	pool = make(chan *mongo.Client, 100)
-}
-
 var cache sync.Map
 
 func Register(tag string, dbname string, dsn string) {
@@ -27,7 +22,13 @@ func Register(tag string, dbname string, dsn string) {
 func Dsn(tag string) string {
 	value, ok := cache.Load("dsn."+tag);
     if !ok {
-        panic("dsn配置不存在:"+tag)
+        _dsn := os.Getenv(tag+".dsn")
+    	if _dsn!="" {
+    		cache.Store("dsn."+tag, _dsn)
+    		return _dsn
+    	} else {
+        	panic("dsn配置不存在:"+tag)
+    	}
     }
 
     dsn, _ := value.(string)
@@ -38,7 +39,13 @@ func Dsn(tag string) string {
 func Dbname(tag string) string {
 	value, ok := cache.Load("dbname."+tag)
 	if !ok {
-		panic("dbname配置不存在:"+tag)
+		_dbname := os.Getenv(tag+".dbname")
+    	if _dbname!="" {
+    		cache.Store("dbname."+tag, _dbname)
+    		return _dbname
+    	} else {
+        	panic("dbname配置不存在:"+tag)
+    	}
 	}
 
 	dbname, _ := value.(string)
@@ -57,31 +64,29 @@ func NewOrm(table string, tag ...string) *Orm {
 	return (&Orm{}).Init(dbtag, table)
 }
 
+var pool sync.Map
 func Open(tag string) *mongo.Client {
-	for {
-		select {
-				case conn := <-pool:
-					err := conn.Ping(context.TODO(), nil)
-					if err == nil {
-						return conn
-					}
-
-				default            :
-						dsn := Dsn(tag)
-						client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dsn).SetMinPoolSize(5).SetMaxPoolSize(100))
-						if err != nil {
-							panic(err)
-						}
-
-						return client
+	db, ok := pool.Load("db."+tag)
+	if !ok {
+		dsn := Dsn(tag)
+		client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dsn).SetMinPoolSize(5).SetMaxPoolSize(100))
+		if err != nil {
+			panic(err)
 		}
+
+		err = client.Ping(context.TODO(), nil)
+		if err!= nil {
+			panic(err)
+		}
+
+		pool.Store("db."+tag, client)
+
+		return client
 	}
+
+	return db.(*mongo.Client)
 }
 
 func Close(conn *mongo.Client) {
-	select {
-			case pool <- conn:
-			default          :
-							conn.Disconnect(context.TODO())
-    }
+	//conn.Disconnect(context.TODO())
 }
