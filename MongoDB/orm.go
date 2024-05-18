@@ -15,6 +15,7 @@ type Orm struct {
 	dbtag string
 	dbname string
 	table string
+	collection *mongo.Collection
 
 	selectFields map[string]any
 	selectConds []string
@@ -33,6 +34,7 @@ func (O *Orm) Init(dbtag string, table string) *Orm {
 	O.dbtag  = dbtag
 	O.dbname = Dbname(dbtag)
 	O.table  = table
+	O.collection = Open(O.dbtag).Database(O.dbname).Collection(O.table)
 
 	O.debug        = os.Getenv("debug")
 	O.selectFields = map[string]any{}
@@ -47,11 +49,8 @@ func (O *Orm) Init(dbtag string, table string) *Orm {
 }
 
 func (O *Orm) Insert(data map[string]any) string {
-	conn := Open(O.dbtag)
-	defer Close(conn)
-
 	data = detect(data)
-	res, err := conn.Database(O.dbname).Collection(O.table).InsertOne(context.TODO(), data)
+	res, err := O.collection.InsertOne(context.TODO(), data)
 	if err != nil {
 		panic(err)
 	}
@@ -60,11 +59,8 @@ func (O *Orm) Insert(data map[string]any) string {
 }
 
 func (O *Orm) Delete() int64 {
-	conn := Open(O.dbtag)
-	defer Close(conn)
-
 	filter := O.filter()
-	result, err := conn.Database(O.dbname).Collection(O.table).DeleteMany(context.TODO(), filter)
+	result, err := O.collection.DeleteMany(context.TODO(), filter)
 	if err != nil {
 		panic(err)
 	}
@@ -73,13 +69,10 @@ func (O *Orm) Delete() int64 {
 }
 
 func (O *Orm) Update(data map[string]any) int64 {
-	conn := Open(O.dbtag)
-	defer Close(conn)
-
 	data    = detect(data)
 	filter := O.filter()
 	update := map[string]any{"$set":data}
-	result, err := conn.Database(O.dbname).Collection(O.table).UpdateMany(context.TODO(), filter, update)
+	result, err := O.collection.UpdateMany(context.TODO(), filter, update)
 	if err != nil {
 		panic(err)
 	}
@@ -411,9 +404,6 @@ func (O *Orm) Limit(limit int64) *Orm {
 }
 
 func (O *Orm) Select() []map[string]any {
-	conn := Open(O.dbtag)
-	defer Close(conn)
-
 	filter := O.filter()
 	result := []map[string]any{}
 
@@ -445,7 +435,7 @@ func (O *Orm) Select() []map[string]any {
 
 	    //常见聚合count\sum\max\min\avg
 	    var err error
-	    cursor, err = conn.Database(O.dbname).Collection(O.table).Aggregate(context.Background(), aggs)
+	    cursor, err = O.collection.Aggregate(context.Background(), aggs)
 		if err != nil {
 			panic(err)
 		}
@@ -466,7 +456,7 @@ func (O *Orm) Select() []map[string]any {
 		}
 
 		var err error
-		cursor, err = conn.Database(O.dbname).Collection(O.table).Find(context.TODO(), filter, findOptions)
+		cursor, err = O.collection.Find(context.TODO(), filter, findOptions)
 		if err != nil {
 			panic(err)
 		}
@@ -506,9 +496,6 @@ func (O *Orm) Select() []map[string]any {
 }
 
 func (O *Orm) Find() map[string]any {
-	conn := Open(O.dbtag)
-	defer Close(conn)
-
 	if len(O.selectGroup)>0 {
 		panic("聚合查询不支持此操作")
 	}
@@ -526,7 +513,7 @@ func (O *Orm) Find() map[string]any {
 	}
 
 	var result map[string]any
-	err := conn.Database(O.dbname).Collection(O.table).FindOne(context.TODO(), filter, findOptions).Decode(&result)
+	err := O.collection.FindOne(context.TODO(), filter, findOptions).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil
@@ -613,11 +600,8 @@ func (O *Orm) Sum(field string) int32 {
 		panic("聚合查询不支持此操作")
 	}
 
-	conn := Open(O.dbtag)
-	defer Close(conn)
-
     filter    := O.filter()
-    cursor, _ := conn.Database(O.dbname).Collection(O.table).Aggregate(context.Background(), []map[string]any{
+    cursor, _ := O.collection.Aggregate(context.Background(), []map[string]any{
         {"$match": filter},
         {"$group": map[string]any{"_id": nil, "sum": map[string]any{"$sum": "$"+field}}},
     })
@@ -632,9 +616,6 @@ func (O *Orm) Sum(field string) int32 {
 }
 
 func (O *Orm) Count() int32 {
-	conn := Open(O.dbtag)
-	defer Close(conn)
-
 	filter := O.filter()
 
 	if len(O.selectGroupId)>0 {
@@ -657,7 +638,7 @@ func (O *Orm) Count() int32 {
 
 	    //常见聚合count\sum\max\min\avg
 	    var err error
-	    cursor, err := conn.Database(O.dbname).Collection(O.table).Aggregate(context.Background(), aggs)
+	    cursor, err := O.collection.Aggregate(context.Background(), aggs)
 		if err != nil {
 			panic(err)
 		}
@@ -671,7 +652,7 @@ func (O *Orm) Count() int32 {
 		return 0
 
 	} else {
-		count, err := conn.Database(O.dbname).Collection(O.table).CountDocuments(context.TODO(), filter)
+		count, err := O.collection.CountDocuments(context.TODO(), filter)
 		if err != nil {
 			panic(err)
 		}
@@ -686,12 +667,10 @@ func (O *Orm) Exist(id string) bool {
 	}
 
 	var result map[string]any
-	conn := Open(O.dbtag)
-	defer Close(conn)
 
 	_id, _ := primitive.ObjectIDFromHex(id)
 	filter := map[string]any{"_id":_id}
-	err    := conn.Database(O.dbname).Collection(O.table).FindOne(context.TODO(), filter).Decode(&result)
+	err    := O.collection.FindOne(context.TODO(), filter).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return false
