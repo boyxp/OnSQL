@@ -3,13 +3,13 @@ package MongoDB
 import "testing"
 import "os"
 
-//注册数据库连接
+//Initialization
 func init() {
 	os.Setenv("debug", "yes")
 	Register("mongodb", "test", "mongodb://localhost:27017")
 }
 
-//插入
+//Insert Records
 func TestInsert(t *testing.T) {
 	O := Model{"goods"}
 	O.Insert(map[string]any{"name":"可口可乐","price":100,"detail":"...","category":"饮料","create_time":"2024-01-01 01:01:01"})
@@ -24,7 +24,7 @@ func TestInsert(t *testing.T) {
 	O.Insert(map[string]any{"name":"呢子大衣","price":200,"detail":"...","category":"服装","create_time":"2024-01-17 01:01:01"})
 }
 
-//主键条件查询
+//Primary Key Query
 func TestSelectPrimary(t *testing.T) {
 	O   := Model{"goods"}
 	id  := O.Insert(map[string]any{"name":"主键查询","price":200,"detail":"...","category":"服装"})
@@ -50,7 +50,7 @@ func TestSelectPrimary(t *testing.T) {
 	}
 }
 
-//主键条件检查记录是否存在
+//Existence Check
 func TestExist(t *testing.T) {
 	O := Model{"goods"}
 	ok := O.Exist("_test_")
@@ -61,7 +61,7 @@ func TestExist(t *testing.T) {
 	}
 }
 
-//指定返回字段
+//Field Selection
 func TestSelectField(t *testing.T) {
 	O := Model{"goods"}
 	row := O.Field("name,category").Find()
@@ -74,7 +74,7 @@ func TestSelectField(t *testing.T) {
 	}
 }
 
-//=条件查询
+//Equal Condition
 func TestSelectEq(t *testing.T) {
 	O := Model{"goods"}
 	row := O.Where("price", 400).Find()
@@ -85,7 +85,7 @@ func TestSelectEq(t *testing.T) {
 	}
 }
 
-//大于等于条件查询
+//Greater or Equal Condition
 func TestSelectGtEq(t *testing.T) {
 	O := Model{"goods"}
 	row := O.Where("price", ">=", 700).Find()
@@ -96,7 +96,7 @@ func TestSelectGtEq(t *testing.T) {
 	}
 }
 
-//多条件查询
+//Multiple Conditions
 func TestSelectMulti(t *testing.T) {
 	O := Model{"goods"}
 	rows := O.Where(map[string]any{
@@ -112,7 +112,7 @@ func TestSelectMulti(t *testing.T) {
 	}
 }
 
-//in条件查询
+//In Condition
 func TestSelectIn(t *testing.T) {
 	O := Model{"goods"}
 	rows := O.Where("name", "in", []string{"小红帽","可口可乐"}).Select()
@@ -123,7 +123,7 @@ func TestSelectIn(t *testing.T) {
 	}
 }
 
-//null过滤条件查询
+//Null Conditions
 func TestSelectNull(t *testing.T) {
 	O := Model{"goods"}
 	row := O.Where("detail", "is", "null").Find()
@@ -134,7 +134,7 @@ func TestSelectNull(t *testing.T) {
 	}
 }
 
-//not null过滤条件查询
+//Not Null Conditions
 func TestSelectNotNull(t *testing.T) {
 	O := Model{"goods"}
 	row := O.Where("detail", "is not", "null").Find()
@@ -145,7 +145,7 @@ func TestSelectNotNull(t *testing.T) {
 	}
 }
 
-//between区间条件查询
+//Between Condition
 func TestSelectBetween(t *testing.T) {
 	O := Model{"goods"}
 	rows := O.Where("create_time", "BETWEEN", []string{"2024-01-01 01:01:01","2024-01-03 01:01:01"}).Select()
@@ -156,7 +156,7 @@ func TestSelectBetween(t *testing.T) {
 	}
 }
 
-//复杂语句参数代入查询
+//Complex Expressions
 func TestSelectExp(t *testing.T) {
 	O := Model{"goods"}
 	row := O.Where("detail is not null AND category=? AND price>?", "服装",100).Find()
@@ -167,7 +167,7 @@ func TestSelectExp(t *testing.T) {
 	}
 }
 
-//like条件搜索查询
+//Like Condition
 func TestSelectLike(t *testing.T) {
 	O := Model{"goods"}
 	row := O.Where("name", "like", "%帽").Find()
@@ -178,7 +178,7 @@ func TestSelectLike(t *testing.T) {
 	}
 }
 
-//字段排序
+//Ordering
 func TestSelectOrder(t *testing.T) {
 	O := Model{"goods"}
 	rows := O.Field("category,price").Order("category","asc").Order("price","desc").Select()
@@ -189,7 +189,7 @@ func TestSelectOrder(t *testing.T) {
 	}
 }
 
-//group+having查询
+//Grouping and Aggregation
 func TestSelectGroup(t *testing.T) {
 	O := Model{"goods"}
 	rows := O.Field("count(*) as num,category,price,date_format(create_time, '%Y_%m_%d_%H') as d").
@@ -205,7 +205,7 @@ func TestSelectGroup(t *testing.T) {
 	}
 }
 
-//直接取单记录指定字段值
+//Value Selection
 func TestSelectValue(t *testing.T) {
 	O := Model{"goods"}
 	name := O.Field("name").Value("name")
@@ -216,7 +216,6 @@ func TestSelectValue(t *testing.T) {
 	}
 }
 
-//取多记录指定字段切片
 func TestSelectValues(t *testing.T) {
 	O := Model{"goods"}
 	names := O.Field("name").Values("name")
@@ -228,7 +227,6 @@ func TestSelectValues(t *testing.T) {
 	}
 }
 
-//取K=>V字段记录map
 func TestSelectColumns(t *testing.T) {
 	O := Model{"goods"}
 	//names := O.Columns("name")
@@ -241,7 +239,7 @@ func TestSelectColumns(t *testing.T) {
 	}
 }
 
-//取最大最小值
+//Max and Min Values
 func TestSelectMaxMin(t *testing.T) {
 	O := Model{"goods"}
 	max_id := O.Field("MAX(price) as max_price").Select()
@@ -259,7 +257,7 @@ func TestSelectMaxMin(t *testing.T) {
 	}
 }
 
-//查询条件复用
+//Query Reuse
 func TestSelectQueryReuse(t *testing.T) {
 	O := Model{"goods"}
 
@@ -301,7 +299,7 @@ func TestSelectQueryReuse(t *testing.T) {
 	}
 }
 
-//更新操作，可选更新条数
+//Update Records
 func TestUpdate(t *testing.T) {
 	O := Model{"goods"}
 	af := O.Where("name", "可口可乐").Update(map[string]any{"name":"可可口口","price":123})
@@ -312,7 +310,7 @@ func TestUpdate(t *testing.T) {
 	}
 }
 
-//删除操作，可选删除条数
+//Delete Records
 func TestDelete(t *testing.T) {
 	O := Model{"goods"}
 	id := O.Field("_id").Find()
