@@ -1,42 +1,120 @@
 # OnSQL
-用SQL查询MongoDB
+
+Using SQL Queries with MongoDB
 
 ![](https://img.shields.io/npm/l/vue.svg)
 ![Test](https://github.com/boyxp/OnSQL/actions/workflows/go.yml/badge.svg)
 
-## 快速上手
-```golang
-package main
 
-import "fmt"
-import "github.com/boyxp/OnSQL/MongoDB"
+OnSQL allows you to use SQL-like queries to interact with MongoDB. Below is a guide on how to get started with OnSQL.
 
-func main() {
-	//注册MongoDB数据库信息(tag标签、数据库名称、dsn)
-	MongoDB.Register("demo", "test", "mongodb://localhost:27017")
+## Quick Start
 
-	//指定tag标签和集合名，用tag方便数据库改名
-	shop := MongoDB.Model{"demo.shop"}
+1. **Install OnSQL**:
+   To use OnSQL, you need to get the package:
 
-	//插入记录
-	shop.Insert(map[string]interface{}{"name":"可口可乐","price":100,"detail":"...","category":"饮料"})
-	shop.Insert(map[string]interface{}{"name":"小红帽","price":200,"detail":"...","category":"服装"})
-	shop.Insert(map[string]interface{}{"name":"雪碧","price":300,"category":"饮料"})
+   ```sh
+   go get github.com/boyxp/OnSQL
+   ```
 
-	//读取记录
-	list := shop.Field("name,price").
-				Where("price", ">", 100).
-				Order("price", "desc").
-				Page(1).Limit(10).Select()
-	fmt.Println(list)
+2. **Create a Basic Application**:
+   Here’s an example of how to create a basic application using OnSQL:
 
-	//聚合查询
-	aggs := shop.Field("category,count(*) total,sum(price) as sum_price,avg(price) as avg_price,min(price) as min_price,max(price) as max_price").
-			Group("category").Select()
-	for k, v := range aggs {
-		fmt.Println(k, v)
-	}
-}
-```
+   ```go
+   package main
 
-更多示例见[单元测试](https://github.com/boyxp/OnSQL/blob/main/MongoDB/orm_test.go)
+   import (
+       "fmt"
+       "github.com/boyxp/OnSQL/MongoDB"
+   )
+
+   func main() {
+       // Register MongoDB database information (tag, database name, DSN)
+       MongoDB.Register("demo", "test", "mongodb://localhost:27017")
+
+       // Specify the tag and collection name
+       shop := MongoDB.Model{"demo.shop"}
+
+       // Insert records
+       shop.Insert(map[string]interface{}{
+           "name":     "Coca Cola",
+           "price":    100,
+           "detail":   "...",
+           "category": "Beverage",
+       })
+       shop.Insert(map[string]interface{}{
+           "name":     "Red Riding Hood",
+           "price":    200,
+           "detail":   "...",
+           "category": "Clothing",
+       })
+       shop.Insert(map[string]interface{}{
+           "name":     "Sprite",
+           "price":    300,
+           "category": "Beverage",
+       })
+
+       // Read records
+       list := shop.Field("name,price").
+           Where("price", ">", 100).
+           Order("price", "desc").
+           Page(1).Limit(10).Select()
+       fmt.Println(list)
+
+       // Aggregate query
+       aggs := shop.Field("category,count(*) total,sum(price) as sum_price,avg(price) as avg_price,min(price) as min_price,max(price) as max_price").
+           Group("category").Select()
+       for k, v := range aggs {
+           fmt.Println(k, v)
+       }
+   }
+   ```
+
+### Explanation:
+
+- **Register MongoDB**:
+  ```go
+  MongoDB.Register("demo", "test", "mongodb://localhost:27017")
+  ```
+  This registers the MongoDB database with a tag (`demo`), database name (`test`), and the connection string (DSN).
+
+- **Model Definition**:
+  ```go
+  shop := MongoDB.Model{"demo.shop"}
+  ```
+  This defines a model for the `shop` collection in the `demo` database.
+
+- **Insert Records**:
+  ```go
+  shop.Insert(map[string]interface{}{"name":"Coca Cola","price":100,"detail":"...","category":"Beverage"})
+  shop.Insert(map[string]interface{}{"name":"Red Riding Hood","price":200,"detail":"...","category":"Clothing"})
+  shop.Insert(map[string]interface{}{"name":"Sprite","price":300,"category":"Beverage"})
+  ```
+  These lines insert several records into the `shop` collection.
+
+- **Read Records**:
+  ```go
+  list := shop.Field("name,price").
+      Where("price", ">", 100).
+      Order("price", "desc").
+      Page(1).Limit(10).Select()
+  fmt.Println(list)
+  ```
+  This queries the `shop` collection, selecting records where the price is greater than 100, ordering them by price in descending order, and limiting the results to 10 per page.
+
+- **Aggregate Query**:
+  ```go
+  aggs := shop.Field("category,count(*) total,sum(price) as sum_price,avg(price) as avg_price,min(price) as min_price,max(price) as max_price").
+      Group("category").Select()
+  for k, v := range aggs {
+      fmt.Println(k, v)
+  }
+  ```
+  This performs an aggregate query to group records by category and calculate various statistics (total count, sum, average, min, and max price).
+
+## Additional Resources
+
+For more examples and detailed usage, refer to the [OnSQL Unit Tests](https://github.com/boyxp/OnSQL/blob/main/MongoDB/orm_test.go).
+
+This should help you get started with OnSQL for MongoDB. If you have any specific questions or need further assistance, feel free to ask!
+
